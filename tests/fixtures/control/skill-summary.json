@@ -1,0 +1,22 @@
+{
+  "Response": {
+    "RequestId": "skills",
+    "TotalCount": 2,
+    "SkillList": [
+      {
+        "SkillId": "skill-md",
+        "SkillStatus": "RELEASED",
+        "AnalysisStatus": "AVAILABLE",
+        "RiskLevel": 0,
+        "Profile": { "Name": "hello-docs", "Description": "A skill with markdown" }
+      },
+      {
+        "SkillId": "skill-empty",
+        "SkillStatus": "RELEASED",
+        "AnalysisStatus": "AVAILABLE",
+        "RiskLevel": 0,
+        "Profile": { "Name": "empty-url", "Description": "Must not become body" }
+      }
+    ]
+  }
+}

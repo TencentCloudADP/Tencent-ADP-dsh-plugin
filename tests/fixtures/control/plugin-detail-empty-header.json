@@ -1,0 +1,21 @@
+{
+  "Response": {
+    "RequestId": "detail-header",
+    "Plugin": {
+      "PluginId": "plugin-empty-header",
+      "PluginKind": 2,
+      "Profile": { "Name": "Needs Header" },
+      "Operation": { "AllowExternalAccess": true },
+      "Config": {
+        "MCPPluginConfig": {
+          "ExternalMCPServerUrl": "PLUGIN/mcp/streamable",
+          "MCPTransport": 1,
+          "PluginHeader": [
+            { "Name": "X-Vendor-Key", "IsRequired": true, "Value": "" }
+          ]
+        }
+      },
+      "ToolList": []
+    }
+  }
+}

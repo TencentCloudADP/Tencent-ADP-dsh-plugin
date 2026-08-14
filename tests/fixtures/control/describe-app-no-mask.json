@@ -1,0 +1,10 @@
+{
+  "Response": {
+    "RequestId": "app-no-mask",
+    "App": {
+      "AppId": "app-1",
+      "Metadata": { "Name": "Demo" },
+      "SecretInfo": null
+    }
+  }
+}

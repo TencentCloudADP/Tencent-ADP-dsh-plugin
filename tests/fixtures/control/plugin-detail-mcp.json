@@ -1,0 +1,18 @@
+{
+  "Response": {
+    "RequestId": "detail-mcp",
+    "Plugin": {
+      "PluginId": "plugin-mcp",
+      "PluginKind": 2,
+      "Profile": { "Name": "MCP Ping" },
+      "Operation": { "AllowExternalAccess": true },
+      "Config": {
+        "MCPPluginConfig": {
+          "ExternalMCPServerUrl": "PLUGIN/mcp/streamable",
+          "MCPTransport": 1
+        }
+      },
+      "ToolList": []
+    }
+  }
+}

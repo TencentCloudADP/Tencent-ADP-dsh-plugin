@@ -1,0 +1,15 @@
+{
+  "Response": {
+    "RequestId": "detail-no-url",
+    "Plugin": {
+      "PluginId": "plugin-no-url",
+      "PluginKind": 1,
+      "Profile": { "Name": "No URL", "Description": "code plugin, no external address" },
+      "Operation": { "AllowExternalAccess": false },
+      "Config": {
+        "CodePluginConfig": { "Runtime": "python" }
+      },
+      "ToolList": []
+    }
+  }
+}

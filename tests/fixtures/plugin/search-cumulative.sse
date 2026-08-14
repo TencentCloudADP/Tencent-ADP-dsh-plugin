@@ -1,0 +1,5 @@
+data: {"Code":0,"Data":{"Answer":"部","References":[]}}
+
+data: {"Code":0,"Data":{"Answer":"部分答","References":[]}}
+
+data: {"Code":0,"Data":{"Answer":"部分答案全文","References":[{"Title":"来源一","Url":"https://example.com/a"},{"Title":"来源二","Url":"https://example.com/b"}]}}

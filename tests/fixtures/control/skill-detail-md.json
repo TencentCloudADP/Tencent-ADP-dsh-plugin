@@ -1,0 +1,15 @@
+{
+  "Response": {
+    "RequestId": "skill-md",
+    "Skill": {
+      "SkillId": "skill-md",
+      "VersionList": [
+        {
+          "IsCurrent": true,
+          "SkillMarkdownUrl": "SKILL_MD",
+          "SkillUrl": ""
+        }
+      ]
+    }
+  }
+}

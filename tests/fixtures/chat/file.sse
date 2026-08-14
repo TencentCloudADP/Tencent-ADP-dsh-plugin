@@ -1,0 +1,7 @@
+data: {"Type":"message.added","Message":{"MessageId":"r1","Type":"reply"}}
+
+data: {"Type":"text.delta","MessageId":"r1","Text":"here is a file"}
+
+data: {"Type":"message.done","Message":{"MessageId":"r1","Type":"reply","Contents":[{"Type":"file","Url":"COS/demo.png","FileName":"demo.png"}]}}
+
+data: {"Type":"response.completed"}

@@ -1,0 +1,19 @@
+{
+  "Response": {
+    "RequestId": "page0",
+    "TotalCount": 3,
+    "PluginList": [
+      {
+        "PluginId": "plugin-usable-listed-false",
+        "Profile": { "Name": "Usable Listed False", "Description": "list says no" },
+        "Operation": { "AllowExternalAccess": false },
+        "Statistics": { "ToolCount": 1 }
+      },
+      {
+        "PluginId": "plugin-no-url",
+        "Profile": { "Name": "No URL", "Description": "code plugin" },
+        "Operation": { "AllowExternalAccess": true }
+      }
+    ]
+  }
+}

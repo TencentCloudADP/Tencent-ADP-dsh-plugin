@@ -1,0 +1,46 @@
+# One insert layer. dsh plugin add mounts this file once via dsh.bundle.patch.
+# Listing the same package twice in dsh.profile.bundles (package name plus a
+# folder alias) concatenates this insert and boot fails: duplicate adp-core.
+- insert:
+    - id: adp-core
+      name: '@tencent/dsh-adp'
+      config:
+        gatewayKeyEnv: ADP_API_KEY
+        secretIdEnv: ADP_SECRET_ID
+        secretKeyEnv: ADP_SECRET_KEY
+        spaceId: default_space
+        region: ap-guangzhou
+        vendor: ChinaTencentADP
+    - id: llm-adp
+      name: '@tencent/dsh-adp/llm'
+      config:
+        providers: [adp]
+        defaultModel: Hunyuan/hy3
+    - id: web-adp
+      name: '@tencent/dsh-adp/web'
+    - id: plugins-adp
+      name: '@tencent/dsh-adp/plugins'
+      config:
+        enabledPluginIds: []
+        harvestMedia: true
+    - id: skills-adp
+      name: '@tencent/dsh-adp/skills'
+      disabled: true
+    - id: agents-adp
+      name: '@tencent/dsh-adp/agents'
+      disabled: true
+      config:
+        agents: []
+        defaultAppMode: 4
+    - id: control-adp
+      name: '@tencent/dsh-adp/control'
+      disabled: true
+      config:
+        allowMutating:
+          - CreateApp
+          - CreateAgent
+          - ModifyApp
+          - ModifyAgent
+          - CreateRelease
+          - DeleteAgent
+          - DeleteApp

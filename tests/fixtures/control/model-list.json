@@ -1,0 +1,9 @@
+{
+  "Response": {
+    "RequestId": "models",
+    "ModelList": [
+      { "ModelId": "Hunyuan/hy3", "ModelName": "Hunyuan hy3", "ContextWindow": 256000 },
+      { "ModelId": "Deepseek/deepseek-v4-pro", "ModelName": "DeepSeek V4 Pro", "ContextWindow": 1000000 }
+    ]
+  }
+}

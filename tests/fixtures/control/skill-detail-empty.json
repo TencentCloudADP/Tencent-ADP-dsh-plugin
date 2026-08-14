@@ -1,0 +1,12 @@
+{
+  "Response": {
+    "RequestId": "skill-empty",
+    "Skill": {
+      "SkillId": "skill-empty",
+      "Profile": { "Description": "Must not become body" },
+      "VersionList": [
+        { "IsCurrent": true }
+      ]
+    }
+  }
+}

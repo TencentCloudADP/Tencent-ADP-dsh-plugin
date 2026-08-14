@@ -1,0 +1,30 @@
+{
+  "Response": {
+    "RequestId": "detail-api",
+    "Plugin": {
+      "PluginId": "plugin-api",
+      "PluginKind": 0,
+      "Profile": { "Name": "API Search" },
+      "Operation": { "AllowExternalAccess": true },
+      "Config": {},
+      "ToolList": [
+        {
+          "ToolId": "tool-api",
+          "Name": "RunQuery",
+          "Description": "run query",
+          "ToolConfig": {
+            "ApiToolConfig": {
+              "ExternalApiUrl": "PLUGIN/plugin/api/v1/plugin-api/tool-api",
+              "Method": "POST",
+              "StreamMode": 1,
+              "Body": [
+                { "Name": "Query", "Type": 0, "IsRequired": true, "Description": "q" },
+                { "Name": "Tags", "Type": 5, "IsRequired": false, "Description": "tag list" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

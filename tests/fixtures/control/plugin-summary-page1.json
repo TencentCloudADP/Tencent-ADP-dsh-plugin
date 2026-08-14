@@ -1,0 +1,13 @@
+{
+  "Response": {
+    "RequestId": "page1",
+    "TotalCount": 3,
+    "PluginList": [
+      {
+        "PluginId": "plugin-empty-header",
+        "Profile": { "Name": "Needs Header", "Description": "required empty header" },
+        "Operation": { "AllowExternalAccess": false }
+      }
+    ]
+  }
+}

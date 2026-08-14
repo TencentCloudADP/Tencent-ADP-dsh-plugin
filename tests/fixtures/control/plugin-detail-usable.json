@@ -1,0 +1,29 @@
+{
+  "Response": {
+    "RequestId": "detail-usable",
+    "Plugin": {
+      "PluginId": "plugin-usable-listed-false",
+      "PluginKind": 0,
+      "Profile": { "Name": "Usable Listed False", "Description": "has API url" },
+      "Operation": { "AllowExternalAccess": true },
+      "Config": {},
+      "ToolList": [
+        {
+          "ToolId": "tool-1",
+          "Name": "FactCheck",
+          "Description": "check a claim",
+          "ToolConfig": {
+            "ApiToolConfig": {
+              "ExternalApiUrl": "PLUGIN/plugin/api/v1/plugin-usable-listed-false/tool-1",
+              "Method": "POST",
+              "StreamMode": 1,
+              "Body": [
+                { "Name": "Query", "Description": "user query", "Type": 0, "IsRequired": true }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

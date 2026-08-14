@@ -1,0 +1,16 @@
+node_modules/
+lib/
+dist/
+*.tgz
+.DS_Store
+coverage/
+.vite/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.credentials.yaml
+credentials.yaml
+*.pem
+*.log
+.pnpm-store/
