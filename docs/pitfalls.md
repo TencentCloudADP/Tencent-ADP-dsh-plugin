@@ -31,3 +31,13 @@ Ported from adpworker `CONTRIBUTING-ADP.md` and `docs/ADP-接口盘点与需求.
 14. **`adp-core` is a function plugin (`name` / `inject` / `apply`), same as `llm-adp`.** A class default export is eaten by the loader. Sim: `sim-export`.
 
 15. **独立站 / 公有云 switches control + SSE, not the model gateway.** Completions stay on `api.adp.cloud.tencent.com` and still need a gateway `sk-`. Independent-site console SecretId/SecretKey is not `ADP_API_KEY`. Sim: `adp site proxy`.
+
+16. **Site settings wait for `adp`, not only `settings`.** `ctx.inject(['settings'])` can run before `AdpService` provides `adp`. Then `registerSiteSettings` no-ops, `settings.update('adp-core')` throws, and `dsh-host-webserver` answers POST `/adp/site` with an empty 400. Inject `['settings', 'adp']`. Sim: `sim-site-settings`.
+
+17. **Public-cloud `DescribeSkillSummaryList` rejects `FilterList.Perspective`.** Official body is `{ SpaceId, PageNumber, PageSize }`. Perspective defaults to USER and is only legal with custom ProviderType. `DescribeSpaceList` has no `PageNumber`. Live: `tests/live/cloud-e2e.test.ts`.
+
+18. **Model gateway path is `/chat/completions`, not `/v1/chat/completions`.** Official ADP docs only cover CAM control + AppKey SSE (`wss.lke…/adp/v2/chat`). The OpenAI-shaped host is `api.adp.cloud.tencent.com` with **no** `/v1` prefix (adpworker `OpenAIProvider` base_url). `/v1/chat/completions` returns 401 `not_authorized` for a key that 403s `AccountOverdueError` on the unprefixed path. Live: `tests/live/cloud-e2e.test.ts`.
+
+19. **Public-cloud `SpaceId` is a real workspace, not `default_space`.** `cordis.patch.yml` still defaults `spaceId: default_space`. Cloud AKSK injects that value into every control action except `DescribeSpaceList`, and `DescribeAppSummaryList` / `DescribePluginSummaryList` then return `4510004 空间信息不存在`. Pick a workspace on the Settings card (`GET/POST /adp/site` persists `adp-core.spaceId`). Completions do not use SpaceId; apps and plugins do.
+
+20. **`DescribeModelList` ids live under `ModelBasic`.** Public-cloud rows are `{ ModelBasic: { ModelId, ModelName, … } }`. Reading only top-level `ModelId` yields an empty list and `listModels` silently returns builtins. Independent-site rows may be flat. Fixture: nested rows in `tests/unit/sim.test.ts` `normalizeModelList`. Live: `tests/live/cloud-e2e.test.ts`.

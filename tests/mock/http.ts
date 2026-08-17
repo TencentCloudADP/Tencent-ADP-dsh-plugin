@@ -74,7 +74,7 @@ export async function startMockAdp(options: { workspace?: string } = {}): Promis
       if (url === '/' || url === '/?') {
         return send(200, controlResponse(action, body, state))
       }
-      if (url.startsWith('/v1/chat/completions')) {
+      if (url.startsWith('/chat/completions')) {
         const auth = header(req, 'authorization')
         if (auth.includes('sk-bad')) {
           res.statusCode = 401
@@ -179,6 +179,8 @@ function controlResponse(action: string, body: string, state: MockAdpServer): { 
     }
     case 'DescribeModelList':
       return json(loadFixture('control/model-list.json'))
+    case 'DescribeSpaceList':
+      return { Response: { RequestId: 'spaces', SpaceList: [{ SpaceId: 'space-1', Name: 'Mock space' }] } }
     case 'DescribeApp': {
       const mask = payload.FieldMask as { Paths?: string[] } | undefined
       const paths = mask?.Paths ?? []

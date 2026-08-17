@@ -24,13 +24,13 @@ dsh plugin --profile web add .
 
 `~/.dsh/profiles/web/package.json` must list `@tencent/dsh-adp` once under both `dependencies` and `dsh.profile.bundles`. If a profile `cordis.patch.yml` row still says `name: adp-dsh-plugin` (even under a leftover id such as `mcp-tencent-cloud-docs`), delete that row — it is not this bundle, and it re-registers `ctx.adp`.
 
-Git installs fetch source and run `prepare` (tsdown). pnpm ≥10 blocks that until the package is listed under `allowBuilds` in the profile’s `pnpm-workspace.yaml`. A `pnpm pack` tarball is already compiled and does not need that allowance.
+Git installs fetch source and run `prepare` (tsdown). pnpm ≥10 blocks that until the package is listed under `allowBuilds` in the profile’s `pnpm-workspace.yaml`. A `pnpm pack` tarball is already compiled and does not need that allowance. After editing this checkout, run `pnpm run prepare` (or `pnpm test`) and restart `dsh web`; the profile link loads `lib/`, not `src/`.
 
 ## Credentials
 
 ADP has three credential planes. They are not interchangeable. The patch stores **reference names** (`ADP_API_KEY`, …); values live in `$DSH_HOME/.credentials.yaml` or the environment.
 
-In `dsh web`, Settings → Plugins shows a 腾讯云 ADP card. Choose **独立站** or **公有云**, then paste keys. Save writes keys through `credentials.set` into `$DSH_HOME/.credentials.yaml`. OneID opens ADP in a new tab. It does not fill the keys.
+In `dsh web`, Settings → Plugins shows a 腾讯云 ADP card. Choose **独立站** or **公有云**, pick a workspace, then paste keys. Save writes keys through `credentials.set` into `$DSH_HOME/.credentials.yaml`. OneID opens ADP in a new tab. It does not fill the keys.
 
 | Plane | Reference | If missing |
 | --- | --- | --- |
@@ -44,9 +44,9 @@ See [docs/credentials.md](docs/credentials.md).
 
 `adp-core`, `llm-adp`, `web-adp`, and `plugins-adp` start with the plugin:
 
-- Select `adp:Hunyuan/hy3` (or another gateway model) and complete a tool-using turn.
+- Select `adp:Hunyuan/hy3` (or another gateway model) and complete a tool-using turn. How catalog vs completions are wired: [docs/seams.md](docs/seams.md#how-models-work-llm-adp).
 - `web_search` through Hunyuan AI search when this provider is selected (China-centric index).
-- Enable an API or MCP marketplace plugin via `adp_plugin_list` / `adp_plugin_enable`, or `enabledPluginIds`.
+- Enable an API or MCP marketplace plugin via `adp_plugin_list` / `adp_plugin_enable`, or `enabledPluginIds`. Public-cloud plugin/app calls need the workspace chosen above.
 - Generated media links (~24h COS) are saved into the workspace as `saved_files`.
 
 ## Disabled by default

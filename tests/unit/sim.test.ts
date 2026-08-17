@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { Readable } from 'node:stream'
-import { canonicalRequest, fetchLoginUrl, hostForVendor, chatUrlForVendor, pluginBaseForVendor, accountHostForVendor, parseSiteVendor, siteVendorFromConfig, isCloudAksk, readBody, unwrapAccountPayload } from '../../src/index.ts'
+import { apply, canonicalRequest, fetchLoginUrl, hostForVendor, chatUrlForVendor, pluginBaseForVendor, accountHostForVendor, parseSiteVendor, siteVendorFromConfig, isCloudAksk, readBody, unwrapAccountPayload } from '../../src/index.ts'
 import {
   handleLoginUrl,
   PROXY_ICON_PATH,
@@ -19,6 +19,7 @@ import { presentAdpSearchResult } from '../../src/web/index.ts'
 import { assemble } from '../../src/agents/chat.ts'
 import { secretFromApp } from '../../src/agents/provision.ts'
 import { isExternallyCallable, normalizePluginDetail } from '../../src/core/service.ts'
+import { normalizeModelList } from '../../src/core/models.ts'
 import { McpSession } from '../../src/plugins/mcp.ts'
 import { loadFixture, startMockAdp, type MockAdpServer } from '../mock/http.ts'
 import { bootAdp, toolCall } from '../mock/harness.ts'
@@ -419,14 +420,20 @@ describe('account login-url', () => {
 describe('adp site proxy', () => {
   function fakeCtx(initial: 'ChinaTencentADP' | 'ChinaTencentCloud' = 'ChinaTencentADP') {
     let vendor = initial
+    let spaceId = 'default_space'
     return {
       get(name: string) {
         if (name === 'adp') {
           return {
             vendor: () => vendor,
+            spaceId: () => spaceId,
             setLiveVendor: (next: typeof vendor | undefined) => {
               if (next) vendor = next
             },
+            setLiveSpaceId: (next: string | undefined) => {
+              if (next?.trim()) spaceId = next.trim()
+            },
+            listSpaces: async () => [] as Array<{ id: string; name: string }>,
           }
         }
         return undefined
@@ -444,8 +451,18 @@ describe('adp site proxy', () => {
     const captured = collectResponse()
     await handleSite({ method: 'GET' } as IncomingMessage, captured.node, fakeCtx() as never)
     expect(captured.status).toBe(200)
-    expect(JSON.parse(captured.body)).toEqual({ ok: true, vendor: 'ChinaTencentADP' })
-    expect(parseSiteBody(200, captured.body)).toEqual({ ok: true, vendor: 'ChinaTencentADP' })
+    expect(JSON.parse(captured.body)).toEqual({
+      ok: true,
+      vendor: 'ChinaTencentADP',
+      spaceId: 'default_space',
+      spaces: [],
+    })
+    expect(parseSiteBody(200, captured.body)).toEqual({
+      ok: true,
+      vendor: 'ChinaTencentADP',
+      spaceId: 'default_space',
+      spaces: [],
+    })
   })
 
   it('POST switches to public cloud without settings', async () => {
@@ -453,14 +470,64 @@ describe('adp site proxy', () => {
     const captured = collectResponse()
     await handleSite(postReq(JSON.stringify({ vendor: 'ChinaTencentCloud' })), captured.node, ctx as never)
     expect(captured.status).toBe(200)
-    expect(JSON.parse(captured.body)).toEqual({ ok: true, vendor: 'ChinaTencentCloud' })
+    expect(JSON.parse(captured.body)).toEqual({
+      ok: true,
+      vendor: 'ChinaTencentCloud',
+      spaceId: 'default_space',
+      spaces: [],
+    })
     expect(ctx.get('adp').vendor()).toBe('ChinaTencentCloud')
+  })
+
+  it('POST persists a real spaceId', async () => {
+    const ctx = fakeCtx()
+    const captured = collectResponse()
+    await handleSite(postReq(JSON.stringify({ spaceId: 'workspace_one' })), captured.node, ctx as never)
+    expect(captured.status).toBe(200)
+    expect(JSON.parse(captured.body)).toEqual({
+      ok: true,
+      vendor: 'ChinaTencentADP',
+      spaceId: 'workspace_one',
+      spaces: [],
+    })
+    expect(ctx.get('adp').spaceId()).toBe('workspace_one')
   })
 
   it('POST rejects an unknown vendor', async () => {
     const captured = collectResponse()
     await handleSite(postReq(JSON.stringify({ vendor: 'International' })), captured.node, fakeCtx() as never)
     expect(captured.status).toBe(400)
+  })
+
+  it('POST returns JSON when settings.update throws', async () => {
+    const ctx = {
+      get(name: string) {
+        if (name === 'adp') {
+          return {
+            vendor: () => 'ChinaTencentADP',
+            spaceId: () => 'default_space',
+            setLiveVendor: () => undefined,
+            setLiveSpaceId: () => undefined,
+            listSpaces: async () => [],
+          }
+        }
+        if (name === 'settings') {
+          return {
+            update: async () => {
+              throw new Error('settings namespace "adp-core" is not registered')
+            },
+          }
+        }
+        return undefined
+      },
+    }
+    const captured = collectResponse()
+    await handleSite(postReq(JSON.stringify({ vendor: 'ChinaTencentCloud' })), captured.node, ctx as never)
+    expect(captured.status).toBe(500)
+    expect(JSON.parse(captured.body)).toEqual({
+      ok: false,
+      error: 'settings namespace "adp-core" is not registered',
+    })
   })
 
   it('returns JSON 405 for other methods', async () => {
@@ -478,6 +545,43 @@ describe('adp site proxy', () => {
       ok: false,
       error: 'Site proxy returned HTTP 405 with an empty body.',
     })
+  })
+})
+
+describe('normalizeModelList', () => {
+  it('reads flat ModelId rows', () => {
+    const models = normalizeModelList(JSON.parse(loadFixture('control/model-list.json')).Response)
+    expect(models.map((model) => model.id)).toEqual(['Hunyuan/hy3', 'Deepseek/deepseek-v4-pro'])
+  })
+
+  it('unwraps public-cloud ModelBasic.ModelId', () => {
+    const models = normalizeModelList({
+      ModelList: [
+        { ModelBasic: { ModelId: 'Hunyuan/hy3', ModelName: '混元', ContextWindow: 256000 } },
+        { ModelBasic: { ModelId: 'Deepseek/deepseek-v4-flash' } },
+        { ModelBasic: {} },
+      ],
+    })
+    expect(models).toEqual([
+      { id: 'Hunyuan/hy3', name: '混元', contextWindow: 256000 },
+      { id: 'Deepseek/deepseek-v4-flash', name: 'Deepseek/deepseek-v4-flash' },
+    ])
+  })
+})
+
+describe('sim-site-settings', () => {
+  it('waits for settings and adp before installing the site section', () => {
+    const injected: string[][] = []
+    apply({
+      plugin() {
+        return undefined
+      },
+      inject(deps: string[]) {
+        injected.push(deps)
+      },
+    } as never, {})
+    expect(injected).toContainEqual(['settings', 'adp'])
+    expect(injected).not.toContainEqual(['settings'])
   })
 })
 

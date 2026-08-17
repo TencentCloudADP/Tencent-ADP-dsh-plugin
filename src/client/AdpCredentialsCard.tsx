@@ -3,7 +3,7 @@ import { Button, IconChevronDownOutline14, Input, StateDot } from '@deepseek-ai/
 import { AdpIcon } from './AdpIcon.tsx'
 import { t as catalogT, type AdpLocaleKey, type Translate } from './locales.ts'
 import { fetchLoginUrlProxy } from './loginUrl.ts'
-import { fetchSiteVendor, saveSiteVendor, type SiteVendor } from './site.ts'
+import { fetchSiteVendor, saveSiteSettings, type SiteSpace, type SiteVendor } from './site.ts'
 
 const STYLE_ID = 'adp-dsh-credentials-card'
 const CSS = `
@@ -41,6 +41,9 @@ const CSS = `
 .adp-dsh-siteBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .adp-dsh-siteBtnActive{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-module-platform)}
 .adp-dsh-siteBtn:disabled{cursor:default;opacity:.7}
+.adp-dsh-spaceSelect,.adp-dsh-spaceInput{appearance:none;font:inherit;color:inherit;width:100%;border:1px solid var(--dsw-alias-border-l2);background:transparent;border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4}
+.adp-dsh-spaceSelect:focus-visible,.adp-dsh-spaceInput:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.adp-dsh-spaceRow{display:flex;gap:8px;align-items:center}
 `
 
 function ensureStyles(): void {
@@ -126,6 +129,9 @@ export function AdpCredentialsCard({
   const [error, setError] = useState<string | undefined>()
   const [loginError, setLoginError] = useState<string | undefined>()
   const [vendor, setVendor] = useState<SiteVendor>('ChinaTencentADP')
+  const [spaceId, setSpaceId] = useState('default_space')
+  const [spaces, setSpaces] = useState<SiteSpace[]>([])
+  const [spaceDraft, setSpaceDraft] = useState('')
   const [siteBusy, setSiteBusy] = useState(false)
   const [siteError, setSiteError] = useState<string | undefined>()
 
@@ -180,6 +186,9 @@ export function AdpCredentialsCard({
       if (cancelled) return
       if (data.ok) {
         setVendor(data.vendor)
+        setSpaceId(data.spaceId)
+        setSpaces(data.spaces)
+        setSpaceDraft('')
         setSiteError(undefined)
         return
       }
@@ -246,12 +255,14 @@ export function AdpCredentialsCard({
     setSiteBusy(true)
     setSiteError(undefined)
     try {
-      const data = await saveSiteVendor(next)
+      const data = await saveSiteSettings({ vendor: next })
       if (!data.ok) {
         setSiteError(data.error)
         return
       }
       setVendor(data.vendor)
+      setSpaceId(data.spaceId)
+      setSpaces(data.spaces)
       setLoginUrl(undefined)
       const login = await fetchLoginUrlProxy()
       if (login.ok) {
@@ -260,6 +271,27 @@ export function AdpCredentialsCard({
       } else {
         setLoginError(login.error)
       }
+    } catch (caught) {
+      setSiteError(caught instanceof Error ? caught.message : String(caught))
+    } finally {
+      setSiteBusy(false)
+    }
+  }
+
+  async function onSpace(next: string): Promise<void> {
+    const value = next.trim()
+    if (!value || value === spaceId || siteBusy) return
+    setSiteBusy(true)
+    setSiteError(undefined)
+    try {
+      const data = await saveSiteSettings({ spaceId: value })
+      if (!data.ok) {
+        setSiteError(data.error)
+        return
+      }
+      setSpaceId(data.spaceId)
+      setSpaces(data.spaces)
+      setSpaceDraft('')
     } catch (caught) {
       setSiteError(caught instanceof Error ? caught.message : String(caught))
     } finally {
@@ -344,6 +376,50 @@ export function AdpCredentialsCard({
                 : t(vendor === 'ChinaTencentADP' ? 'siteHintStandalone' : 'siteHintCloud')}
             </p>
             {siteError ? <p className="adp-dsh-error" role="status">{siteError}</p> : null}
+          </div>
+          <div className="adp-dsh-site">
+            <p className="adp-dsh-sectionTitle">{t('spaceTitle')}</p>
+            {spaces.length > 0 ? (
+              <select
+                className="adp-dsh-spaceSelect"
+                aria-label={t('spaceTitle')}
+                disabled={siteBusy}
+                value={spaces.some((space) => space.id === spaceId) ? spaceId : ''}
+                onChange={(event) => void onSpace(event.target.value)}
+              >
+                {spaces.some((space) => space.id === spaceId) ? null : (
+                  <option value="">{spaceId || t('spacePlaceholder')}</option>
+                )}
+                {spaces.map((space) => (
+                  <option key={space.id} value={space.id}>
+                    {space.name && space.name !== space.id ? `${space.name} (${space.id})` : space.id}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="adp-dsh-spaceRow">
+                <input
+                  className="adp-dsh-spaceInput"
+                  aria-label={t('spaceTitle')}
+                  disabled={siteBusy}
+                  value={spaceDraft}
+                  placeholder={spaceId && spaceId !== 'default_space' ? spaceId : t('spacePlaceholder')}
+                  onChange={(event) => setSpaceDraft(event.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={siteBusy || !spaceDraft.trim()}
+                  onClick={() => void onSpace(spaceDraft)}
+                >
+                  {t('spaceApply')}
+                </Button>
+              </div>
+            )}
+            <p className="adp-dsh-hint">
+              {siteBusy ? t('spaceSaving') : spaces.length > 0 ? t('spaceHint') : t('spaceEmpty')}
+            </p>
           </div>
           <div className="adp-dsh-oneid">
             <p className="adp-dsh-sectionTitle">{t('oneidTitle')}</p>

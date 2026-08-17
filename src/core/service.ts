@@ -116,21 +116,28 @@ export class AdpService extends Service {
   /** Test hook: pin TC3 timestamps. */
   clock: () => number = () => Math.floor(Date.now() / 1000)
 
-  private siteSource?: () => { vendor: SiteVendor }
+  private siteSource?: () => { vendor: SiteVendor; spaceId?: string }
   private liveVendor?: AdpVendor
+  private liveSpaceId?: string
 
   constructor(protected ctx: Context, public config: AdpConfig) {
     super(ctx, 'adp')
   }
 
   /** Settings-resolved site choice, when `ctx.settings` is present. */
-  attachSiteSource(source: () => { vendor: SiteVendor }): void {
+  attachSiteSource(source: () => { vendor: SiteVendor; spaceId?: string }): void {
     this.siteSource = source
   }
 
   /** In-process override used when settings are absent (tests, or settings inject pending). */
   setLiveVendor(vendor: AdpVendor | undefined): void {
     this.liveVendor = vendor
+  }
+
+  /** In-process SpaceId override. Public-cloud apps/plugins reject the patch default `default_space`. */
+  setLiveSpaceId(spaceId: string | undefined): void {
+    const trimmed = spaceId?.trim()
+    this.liveSpaceId = trimmed || undefined
   }
 
   gatewayKeyRef(): CredentialRef {
@@ -153,7 +160,22 @@ export class AdpService extends Service {
   }
 
   spaceId(): string {
+    if (this.liveSpaceId) return this.liveSpaceId
+    const site = this.siteSource?.()
+    if (site?.spaceId?.trim()) return site.spaceId.trim()
     return this.config.spaceId || 'default_space'
+  }
+
+  async listSpaces(signal?: AbortSignal): Promise<Array<{ id: string; name: string }>> {
+    const data = await this.call('DescribeSpaceList', {}, signal)
+    const rows = (data.SpaceList as Array<Record<string, unknown>> | undefined) ?? []
+    const out: Array<{ id: string; name: string }> = []
+    for (const row of rows) {
+      const id = String(row.SpaceId ?? '').trim()
+      if (!id) continue
+      out.push({ id, name: String(row.Name ?? row.SpaceName ?? id) })
+    }
+    return out
   }
 
   region(): string {

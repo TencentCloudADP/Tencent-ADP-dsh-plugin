@@ -14,6 +14,7 @@ export {
   HOST_CLOUD,
   HOST_INTL,
   GATEWAY_BASE_URL,
+  GATEWAY_CHAT_PATH,
   hunyuanSearchUrl,
   hostForVendor,
   chatUrlForVendor,
@@ -39,6 +40,7 @@ export {
   SiteConfig,
   handleSite,
   applySiteVendor,
+  applySiteSettings,
   registerSiteSettings,
 } from './site.ts'
 
@@ -50,7 +52,7 @@ export {
  */
 export function apply(ctx: Context, config: AdpConfig): void {
   applyCore(ctx, config)
-  ctx.inject(['settings'], (settingsCtx) => {
+  ctx.inject(['settings', 'adp'], (settingsCtx) => {
     registerSiteSettings(settingsCtx, config.vendor)
   })
   ctx.inject(['webServer'], (webCtx) => {

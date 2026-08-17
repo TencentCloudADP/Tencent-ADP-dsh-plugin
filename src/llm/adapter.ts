@@ -14,6 +14,7 @@ import type {
   StreamChunk,
 } from '@deepseek-ai/dsh-llm'
 import { idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
+import { GATEWAY_CHAT_PATH } from '../core/hosts.ts'
 import { AdpError, INVALID_CREDENTIAL, MISSING_CREDENTIAL } from '../core/errors.ts'
 import { BUILTIN_MODELS } from '../core/models.ts'
 import type { AdpService } from '../core/service.ts'
@@ -120,7 +121,7 @@ export class AdpAdapter extends LlmAdapter {
     }
     let response: Response
     try {
-      response = await fetch(`${adp.gatewayBaseURL()}/v1/chat/completions`, {
+      response = await fetch(`${adp.gatewayBaseURL()}${GATEWAY_CHAT_PATH}`, {
         method: 'POST',
         headers,
         body: payload,

@@ -6,7 +6,7 @@ describe('with-key smoke', () => {
   const missing = required.filter((name) => !process.env[name])
   it.skipIf(missing.length > 0)('gateway completion (skipped without env)', async () => {
     const key = process.env.ADP_API_KEY!
-    const resp = await fetch('https://api.adp.cloud.tencent.com/v1/chat/completions', {
+    const resp = await fetch('https://api.adp.cloud.tencent.com/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${key}`,

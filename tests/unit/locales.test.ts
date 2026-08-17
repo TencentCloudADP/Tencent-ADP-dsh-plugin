@@ -26,6 +26,8 @@ describe('adp locales', () => {
     expect(t('zh', 'siteStandalone')).toBe('独立站')
     expect(t('zh', 'siteCloud')).toBe('公有云')
     expect(t('en', 'siteHintStandalone')).toMatch(/not the 26-character AKSK/)
+    expect(t('zh', 'spaceTitle')).toBe('工作空间')
+    expect(t('en', 'spaceHint')).toMatch(/4510004/)
   })
 
   it('interpolates {name} placeholders', () => {

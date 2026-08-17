@@ -11,6 +11,21 @@ export const BUILTIN_MODELS = [
 export const MODEL_SCENE_AGENT = 3
 export const MODEL_SCENE_CLAW = 18
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
+}
+
+function pickString(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim()
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  }
+  return ''
+}
+
+/** Public-cloud `DescribeModelList` nests ids under `ModelBasic`; independent-site rows are flat. */
 export function normalizeModelList(data: Record<string, unknown>): Array<{ id: string; name: string; contextWindow?: number }> {
   const lists = [
     data.ModelList,
@@ -22,10 +37,14 @@ export function normalizeModelList(data: Record<string, unknown>): Array<{ id: s
   if (!rows) return []
   const out: Array<{ id: string; name: string; contextWindow?: number }> = []
   for (const row of rows) {
-    const id = String(row.ModelId ?? row.Model ?? row.Id ?? row.Name ?? '')
+    const basic = asRecord(row.ModelBasic)
+    const id = pickString(basic?.ModelId, basic?.Model, basic?.Id, row.ModelId, row.Model, row.Id, row.Name)
     if (!id) continue
-    const name = String(row.ModelName ?? row.Name ?? id)
-    const ctx = Number(row.ContextWindow ?? row.MaxTokens ?? row.ContextLength ?? 0)
+    const name = pickString(basic?.ModelName, basic?.Name, row.ModelName, row.Name, id)
+    const ctx = Number(
+      basic?.ContextWindow ?? basic?.MaxTokens ?? basic?.ContextLength
+      ?? row.ContextWindow ?? row.MaxTokens ?? row.ContextLength ?? 0,
+    )
     out.push({
       id,
       name,

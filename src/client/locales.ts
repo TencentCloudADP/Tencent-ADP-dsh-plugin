@@ -28,6 +28,13 @@ export const en = {
   siteHintCloud:
     'Control plane: adp.tencentcloudapi.com (CAM AKID SecretId/SecretKey). Chat SSE: wss.lke.cloud.tencent.com. Gateway sk- still goes to api.adp.cloud.tencent.com.',
   siteSaving: 'Switching site…',
+  spaceTitle: 'Workspace',
+  spaceHint:
+    'Public-cloud apps and marketplace plugins need a real SpaceId. The patch default default_space is not a workspace on most accounts (control-plane 4510004).',
+  spaceEmpty: 'No workspaces listed. Paste a SpaceId from the ADP console.',
+  spacePlaceholder: 'SpaceId',
+  spaceApply: 'Use this workspace',
+  spaceSaving: 'Saving workspace…',
   manualTitle: 'Manual keys',
   loopbackHint: 'Credential writes are loopback-only. Open this UI on 127.0.0.1 to save keys.',
   optionalSuffix: ' (optional)',
@@ -67,6 +74,13 @@ export const zh = {
   siteHintCloud:
     '控制面走 adp.tencentcloudapi.com（CAM 的 AKID SecretId/SecretKey）。对话 SSE 走 wss.lke.cloud.tencent.com。网关 sk- 仍打 api.adp.cloud.tencent.com。',
   siteSaving: '正在切换站点…',
+  spaceTitle: '工作空间',
+  spaceHint:
+    '公有云的应用和插件市场需要真实的 SpaceId。补丁默认的 default_space 在多数账号上不是工作空间（控制面 4510004）。',
+  spaceEmpty: '没有列出工作空间。请粘贴 ADP 控制台里的 SpaceId。',
+  spacePlaceholder: 'SpaceId',
+  spaceApply: '使用此工作空间',
+  spaceSaving: '正在保存工作空间…',
   manualTitle: '手动填写钥匙',
   loopbackHint: '只有本机回环地址可以写入钥匙。请在 127.0.0.1 打开此界面再保存。',
   optionalSuffix: '（可选）',

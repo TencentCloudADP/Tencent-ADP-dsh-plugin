@@ -24,13 +24,13 @@ dsh plugin --profile web add .
 
 `~/.dsh/profiles/web/package.json` 的 `dependencies` 和 `dsh.profile.bundles` 里都只应出现一次 `@tencent/dsh-adp`。若 profile 的 `cordis.patch.yml` 里还有 `name: adp-dsh-plugin` 的行（哪怕 id 是残留的 `mcp-tencent-cloud-docs`），删掉——那不是本 bundle，会再次注册 `ctx.adp`。
 
-从 git 安装会拉源码并跑 `prepare`（tsdown）。pnpm ≥10 会拦住构建，直到在 profile 的 `pnpm-workspace.yaml` 里把本包装进 `allowBuilds`。`pnpm pack` 打出的 tarball 已经编译过，不需要这项许可。
+从 git 安装会拉源码并跑 `prepare`（tsdown）。pnpm ≥10 会拦住构建，直到在 profile 的 `pnpm-workspace.yaml` 里把本包装进 `allowBuilds`。`pnpm pack` 打出的 tarball 已经编译过，不需要这项许可。改完本仓库后跑 `pnpm run prepare`（或 `pnpm test`）再重启 `dsh web`；profile 链接加载的是 `lib/`，不是 `src/`。
 
 ## 三把钥匙
 
 ADP 有三把钥匙，不能互相顶替。配置里只写**引用名**（`ADP_API_KEY` 等）；真正的值放在 `$DSH_HOME/.credentials.yaml` 或环境变量。
 
-在 `dsh web` 里：设置 → 插件配置会出现「腾讯云 ADP」卡片。先选 **独立站** 或 **公有云**，再把钥匙贴进去。保存会经 `credentials.set` 写入 `$DSH_HOME/.credentials.yaml`。OneID 会在新标签页打开 ADP，**不会**填这三把钥匙。
+在 `dsh web` 里：设置 → 插件配置会出现「腾讯云 ADP」卡片。先选 **独立站** 或 **公有云**，再选工作空间，然后把钥匙贴进去。保存会经 `credentials.set` 写入 `$DSH_HOME/.credentials.yaml`。OneID 会在新标签页打开 ADP，**不会**填这三把钥匙。
 
 | 平面 | 引用名 | 缺了会怎样 |
 | --- | --- | --- |
@@ -44,9 +44,9 @@ ADP 有三把钥匙，不能互相顶替。配置里只写**引用名**（`ADP_A
 
 `adp-core`、`llm-adp`、`web-adp`、`plugins-adp` 随插件启动：
 
-- 选 `adp:Hunyuan/hy3`（或其他网关模型），完成一轮带工具调用的对话。
+- 选 `adp:Hunyuan/hy3`（或其他网关模型），完成一轮带工具调用的对话。目录和补全怎么接：[docs/seams.md](docs/seams.md#how-models-work-llm-adp)。
 - 当前 provider 选中时，`web_search` 走混元 AI 搜索（偏国内索引）。
-- 用 `adp_plugin_list` / `adp_plugin_enable` 或 `enabledPluginIds` 打开市场里的 API / MCP 插件。
+- 用 `adp_plugin_list` / `adp_plugin_enable` 或 `enabledPluginIds` 打开市场里的 API / MCP 插件。公有云的应用和插件调用需要先选好工作空间。
 - 生成类媒体链接（COS，约 24 小时过期）会落到工作区 `saved_files`。
 
 ## 默认关闭

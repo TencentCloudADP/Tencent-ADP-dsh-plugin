@@ -26,6 +26,8 @@ No Tencent credentials. HTTP is mocked at the process boundary (`tests/mock/http
 - [ ] `sim-login-url-proxy` — GET/POST proxy returns JSON; empty/non-JSON client parse does not throw
 - [ ] `sim-patch-ids` — `cordis.patch.yml` insert ids are unique; applying the layer twice is `duplicate loader entry id: adp-core`
 - [ ] `sim-login-url` — `fetchLoginUrl` posts `{login_platform:"oneid"}` and unwraps `login_url`
+- [ ] `sim-site-settings` — site section injects `['settings', 'adp']`; settings.update failure is JSON 500, not an empty 400
+- [ ] `normalizeModelList` — flat `ModelId` and nested `ModelBasic.ModelId` both yield ids; empty `ModelBasic` is skipped
 
 ### P1
 
@@ -48,12 +50,13 @@ pnpm test:live
 
 Skips when env is missing. Does **not** replace the matching `sim-*`.
 
-Suggested env: `ADP_API_KEY`, and for catalog tests `ADP_SECRET_ID` / `ADP_SECRET_KEY`.
+Suggested env: `ADP_API_KEY`, and for catalog tests `ADP_SECRET_ID` / `ADP_SECRET_KEY`. Public-cloud e2e (`tests/live/cloud-e2e.test.ts`) needs all three and sets `vendor: ChinaTencentCloud`.
 
 Live checks (manual or `test:live`):
 
 - [ ] `adp:Hunyuan/hy3` one tool-using turn
 - [ ] `web_search` via Hunyuan; card replays
+- [ ] public-cloud workspace picked (not `default_space`); `llm.models` ids match `DescribeModelList` / `ModelBasic`
 - [ ] one API plugin and one MCP plugin; cancel stops the call
 - [ ] generation tools return `saved_files` on disk
 - [ ] no AKSK: model and search still work

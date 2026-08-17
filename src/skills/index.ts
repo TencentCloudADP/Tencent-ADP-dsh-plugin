@@ -34,7 +34,6 @@ export function apply(ctx: Context, config: Config): void {
         const data = await ctx.adp.call('DescribeSkillSummaryList', {
           PageNumber: page,
           PageSize: 50,
-          FilterList: [{ Name: 'Perspective', Values: ['USER'] }],
         }, _options.signal)
         const batch = (data.SkillList ?? data.SkillSummaryList ?? data.List) as Array<Record<string, unknown>> | undefined
         if (!Array.isArray(batch) || batch.length === 0) break

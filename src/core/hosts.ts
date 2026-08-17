@@ -4,6 +4,8 @@ export const HOST_INTL = 'adp.intl.tencentcloudapi.com'
 export const HOST_LKE = 'lke.tencentcloudapi.com'
 
 export const GATEWAY_BASE_URL = 'https://api.adp.cloud.tencent.com'
+/** Completions path on the ADP model gateway. Not `/v1/chat/completions` — that host returns 401 `not_authorized`. */
+export const GATEWAY_CHAT_PATH = '/chat/completions'
 export const PLUGIN_API_BASE = 'https://adp.cloud.tencent.com'
 export const PLUGIN_API_BASE_STANDALONE = 'https://adp.tencent.com'
 export const SSE_URL_CN = 'https://wss.lke.cloud.tencent.com/adp/v2/chat'
