@@ -1,7 +1,7 @@
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { Context } from '@deepseek-ai/cordis'
 import { AdpError } from '../core/errors.ts'
-import { MODEL_SCENE_CLAW } from '../core/models.ts'
+import { MODEL_SCENE_AGENT, MODEL_SCENE_CLAW, normalizeModelList } from '../core/models.ts'
 import { agentToolName, kebab } from '../core/names.ts'
 import type { AdpService } from '../core/service.ts'
 
@@ -48,42 +48,69 @@ export async function provisionAgent(
   const appId = String(createApp.AppId ?? '')
   if (!appId) throw new AdpError('CreateApp returned no AppId', 'PROVISION_FAILED')
 
-  const agentPayload: Record<string, unknown> = {
-    AppId: appId,
-    Kind: 0,
-    Name: input.name,
+  const agent: Record<string, unknown> = {
+    Profile: {
+      Name: input.name,
+      Description: input.name,
+      Role: 0,
+    },
     Instructions: input.instructions,
   }
-  if (input.modelId) agentPayload.Model = input.modelId
-  if (input.pluginIds?.length) agentPayload.PluginList = input.pluginIds
-  if (input.skillIds?.length) agentPayload.SkillList = input.skillIds
-  const createAgent = await adp.call('CreateAgent', agentPayload, signal)
-  const agentId = String(createAgent.AgentId ?? '')
-  if (!agentId) throw new AdpError('CreateAgent returned no AgentId', 'PROVISION_FAILED')
+  const modelId = input.modelId || await pickDefaultModel(adp, appMode, signal)
+  if (modelId) agent.Model = { ModelId: modelId }
+  if (input.pluginIds?.length) agent.PluginList = input.pluginIds.map((pluginId) => ({ PluginId: pluginId }))
+  if (input.skillIds?.length) agent.SkillList = input.skillIds.map((skillId) => ({ SkillId: skillId }))
+  try {
+    const createAgent = await adp.call('CreateAgent', {
+      AppId: appId,
+      Kind: 0,
+      Agent: agent,
+    }, signal)
+    const agentId = String(createAgent.AgentId ?? '')
+    if (!agentId) throw new AdpError('CreateAgent returned no AgentId', 'PROVISION_FAILED')
 
-  await adp.call('CreateRelease', { AppId: appId }, signal)
-  await pollRelease(adp, appId, signal)
+    const created = await adp.call('CreateRelease', { AppId: appId }, signal)
+    const releaseId = String(
+      created.ReleaseId
+      ?? (created.Release as Record<string, unknown> | undefined)?.ReleaseId
+      ?? '',
+    )
+    if (!releaseId) throw new AdpError('CreateRelease returned no ReleaseId', 'PROVISION_FAILED')
+    await pollRelease(adp, appId, releaseId, signal)
 
-  const appKey = await fetchAppKey(adp, appId, signal)
-  const slug = kebab(input.name) || agentToolName(input.name).replace(/^adp_ask_/, '')
-  const askTool = `adp_ask_${slug}`.slice(0, 60)
-  if (!appKey) {
-    return {
-      kind: 'needs_appkey',
-      appId,
-      agentId,
-      message:
-        'Release succeeded but AppKey was not returned. DescribeApp needs FieldMask.Paths=["SecretInfo"]; if that is still empty, copy the AppKey from the console and bind it with agents-adp agents[].appKeyEnv. A fake ask tool was not registered.',
+    const appKey = await fetchAppKey(adp, appId, signal)
+    const slug = kebab(input.name) || agentToolName(input.name).replace(/^adp_ask_/, '')
+    const askTool = `adp_ask_${slug}`.slice(0, 60)
+    if (!appKey) {
+      return {
+        kind: 'needs_appkey',
+        appId,
+        agentId,
+        message:
+          'Release succeeded but AppKey was not returned. DescribeApp needs FieldMask.Paths=["SecretInfo"]; if that is still empty, copy the AppKey from the console and bind it with agents-adp agents[].appKeyEnv. A fake ask tool was not registered.',
+      }
     }
+    const appKeyRef = `ADP_APP_KEY_${slug.replace(/-/g, '_').toUpperCase()}`.replace(/[^A-Z0-9_]/g, '_')
+    await ctx.credentials.set(credentialRef(appKeyRef), appKey)
+    return { kind: 'ready', appId, agentId, askTool, appKeyRef }
+  } catch (error) {
+    try {
+      await adp.call('DeleteApp', { AppId: appId }, signal)
+    } catch {
+      // Best-effort: do not hide the original CreateAgent/Release error.
+    }
+    throw error
   }
-  const appKeyRef = `ADP_APP_KEY_${slug.replace(/-/g, '_').toUpperCase()}`.replace(/[^A-Z0-9_]/g, '_')
-  await ctx.credentials.set(credentialRef(appKeyRef), appKey)
-  return { kind: 'ready', appId, agentId, askTool, appKeyRef }
 }
 
-export async function pollRelease(adp: AdpService, appId: string, signal?: AbortSignal): Promise<void> {
-  for (let i = 0; i < 40; i += 1) {
-    const data = await adp.call('DescribeReleaseSummary', { AppId: appId }, signal)
+export async function pollRelease(
+  adp: AdpService,
+  appId: string,
+  releaseId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  for (let i = 0; i < 60; i += 1) {
+    const data = await adp.call('DescribeReleaseSummary', { AppId: appId, ReleaseId: releaseId }, signal)
     const status = Number(
       data.Status
       ?? (data.Release as Record<string, unknown> | undefined)?.Status
@@ -92,7 +119,7 @@ export async function pollRelease(adp: AdpService, appId: string, signal?: Abort
     )
     if (status === 3) return
     if (status === 4) throw new AdpError('CreateRelease failed (Status=4)', 'RELEASE_FAILED')
-    await sleep(500, signal)
+    await sleep(1000, signal)
   }
   throw new AdpError('CreateRelease timed out waiting for Status=3', 'RELEASE_TIMEOUT')
 }
@@ -129,6 +156,21 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       reject(signal.reason ?? new Error('aborted'))
     }, { once: true })
   })
+}
+
+async function pickDefaultModel(
+  adp: AdpService,
+  appMode: number,
+  signal?: AbortSignal,
+): Promise<string | undefined> {
+  const scene = appMode === 4 ? MODEL_SCENE_CLAW : MODEL_SCENE_AGENT
+  try {
+    const data = await adp.call('DescribeModelList', { ModelScene: scene }, signal)
+    const models = normalizeModelList(data)
+    return models.find((model) => /hunyuan|hy3/i.test(model.id))?.id ?? models[0]?.id
+  } catch {
+    return undefined
+  }
 }
 
 export { MODEL_SCENE_CLAW }

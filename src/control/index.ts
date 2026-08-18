@@ -79,7 +79,10 @@ export function apply(ctx: Context, config: Config): void {
       'Call one ADP control-plane action by name. Mutating actions (Create/Modify/Delete App+Agent+Release, etc.) require approval and must appear on allowMutating. CreateSkill and DeletePlugin are never allowed. Unknown parameters surface as ADP\'s own error.',
     parameters: {
       action: { type: 'string', required: true, description: 'Catalog action name, e.g. DescribeApp.' },
-      payload: { type: 'json', description: 'JSON object of request fields.' },
+      payload: {
+        type: 'json',
+        description: 'Request fields as a JSON object (not a JSON string). Example: {"AppId":"…"}.',
+      },
     },
     output: {
       schema: { type: 'json' },
@@ -95,8 +98,24 @@ export function apply(ctx: Context, config: Config): void {
       if (MUTATING.has(args.action) && !allow.has(args.action)) {
         throw new AdpError(`${args.action} is mutating and not on allowMutating.`, 'DENIED')
       }
-      const payload = (args.payload && typeof args.payload === 'object' ? args.payload : {}) as Record<string, unknown>
+      const payload = asCallPayload(args.payload)
       return ctx.adp.call(args.action, payload, exec.signal) as Promise<JsonValue>
     },
   }))
+}
+
+/** Models often stringify `type: json` args; empty/non-object payloads become `{}`. */
+export function asCallPayload(raw: unknown): Record<string, unknown> {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) return raw as Record<string, unknown>
+  if (typeof raw !== 'string') return {}
+  const trimmed = raw.trim()
+  if (!trimmed) return {}
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(trimmed)
+  } catch {
+    throw new AdpError('adp_call payload must be a JSON object, not a string of invalid JSON.', 'BAD_PAYLOAD')
+  }
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>
+  throw new AdpError('adp_call payload must be a JSON object.', 'BAD_PAYLOAD')
 }

@@ -75,6 +75,7 @@ export const CATALOG: Record<string, CatalogEntry> = {
 
   CreateRelease: { version: '2026-05-20', region: '', inject: [] },
   DescribeReleaseSummary: { version: '2026-05-20', region: '', inject: [] },
+  DescribeLatestRelease: { version: '2026-05-20', region: '', inject: [] },
 }
 
 /** Default-denied mutating actions. `config.allowMutating` is the whitelist. */
@@ -97,6 +98,31 @@ export const MUTATING = new Set<string>([
   'DeleteChannel',
   'CreateWorkspaceCredential',
   'CreateRelease',
+])
+
+/** Cloud AKSK auto-fills SpaceId except these AppId-scoped actions (they reject SpaceId). */
+export const NO_AUTO_SPACE_ID = new Set<string>([
+  'DescribeSpaceList',
+  'DescribeApp',
+  'DeleteApp',
+  'ModifyApp',
+  'DescribeAgentSummaryList',
+  'DescribeAgentDetail',
+  'CreateAgent',
+  'DeleteAgent',
+  'ModifyAgent',
+  'CreateRelease',
+  'DescribeReleaseSummary',
+  'DescribeLatestRelease',
+  'GetAppSecret',
+  'CopyAgentFromApp',
+  'BindAgentTool',
+  'UnbindAgentTool',
+  'ModifyAgentToolList',
+  'CreateConversation',
+  'DescribeConversation',
+  'DescribeConversationList',
+  'DescribeConversationMessageList',
 ])
 
 /** Never offered on the allowMutating whitelist. */

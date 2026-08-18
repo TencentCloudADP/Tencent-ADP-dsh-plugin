@@ -1,7 +1,7 @@
 import { Service, type Context } from '@deepseek-ai/cordis'
 import { credentialRef, type CredentialRef } from '@deepseek-ai/dsh-credentials'
 import z from '@deepseek-ai/schemastery'
-import { CATALOG, catalogList, type CatalogEntry } from './catalog.ts'
+import { CATALOG, NO_AUTO_SPACE_ID, catalogList, type CatalogEntry } from './catalog.ts'
 import { AdpError, INVALID_CREDENTIAL, MISSING_CREDENTIAL, errorWithoutSecret } from './errors.ts'
 import {
   GATEWAY_BASE_URL,
@@ -284,7 +284,7 @@ export class AdpService extends Service {
       : this.resolveControlEndpoint(creds.secretId)
     let region = entry.region
     if (!region && isCloudAksk(creds.secretId)) region = this.region()
-    if (isCloudAksk(creds.secretId) && fill.SpaceId === undefined && action !== 'DescribeSpaceList') {
+    if (isCloudAksk(creds.secretId) && fill.SpaceId === undefined && !NO_AUTO_SPACE_ID.has(action)) {
       fill.SpaceId = this.spaceId()
     }
     const body = JSON.stringify(fill)

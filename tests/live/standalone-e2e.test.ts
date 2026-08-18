@@ -1,3 +1,4 @@
+import './env.ts'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -23,6 +24,7 @@ import {
   hunyuanSearchUrl,
 } from '../../src/core/hosts.ts'
 import { MemoryCredentials } from '../mock/harness.ts'
+import { normalizeModelList } from '../../src/core/models.ts'
 
 const required = ['ADP_API_KEY', 'ADP_SECRET_ID', 'ADP_SECRET_KEY'] as const
 const keys = {
@@ -100,7 +102,10 @@ describe.skipIf(missing.length > 0 || !isStandaloneKey)('independent-site e2e', 
   it('lists models from DescribeModelList on capi.adp.tencent.com', async () => {
     const data = await ctx.adp.call('DescribeModelList', { ModelScene: 3 })
     expect(data.Error).toBeUndefined()
-    expect(Array.isArray(data.ModelList) && data.ModelList.length > 0).toBe(true)
+    const parsed = normalizeModelList(data)
+    expect(parsed.length, 'independent-site DescribeModelList also nests ModelBasic.ModelId').toBeGreaterThan(0)
+    const models = await ctx.adp.listModels()
+    expect(models.map((model) => model.id).sort()).toEqual(parsed.map((model) => model.id).sort())
   })
 
   it('lists spaces and apps with standalone paging (PageIndex)', async () => {
@@ -125,7 +130,7 @@ describe.skipIf(missing.length > 0 || !isStandaloneKey)('independent-site e2e', 
     const text = await resp.text()
     expect(
       resp.ok,
-      `gateway HTTP ${resp.status} for ${model}. 403 AccountOverdueError means the key authenticated. Body: ${text.slice(0, 200)}`,
+      `gateway HTTP ${resp.status} for ${model}. 401 AuthenticationError (凭证无效或已过期) is a dead gateway key, not the /v1 path bug (that one is not_authorized). Body: ${text.slice(0, 200)}`,
     ).toBe(true)
     expect(text.toLowerCase()).toMatch(/pong|choices|delta|content/)
   })

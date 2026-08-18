@@ -200,7 +200,23 @@ function controlResponse(action: string, body: string, state: MockAdpServer): { 
     case 'CreateRelease':
       return { Response: { RequestId: 'x', ReleaseId: 'rel-1' } }
     case 'DescribeReleaseSummary':
-      return { Response: { RequestId: 'x', Status: state.releaseStatus } }
+      if (!payload.ReleaseId) {
+        return {
+          Response: {
+            Error: {
+              Code: 'MissingParameter',
+              Message: 'The request is missing the required parameter `ReleaseId`.',
+            },
+            RequestId: 'x',
+          },
+        }
+      }
+      return {
+        Response: {
+          RequestId: 'x',
+          ReleaseSummary: { ReleaseId: payload.ReleaseId, Status: state.releaseStatus },
+        },
+      }
     case 'CreateConversation':
       return { Response: { RequestId: 'x', ConversationId: 'conv-official' } }
     case 'DescribeSkillSummaryList':

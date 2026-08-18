@@ -9,7 +9,7 @@ Pick **独立站** (`ChinaTencentADP`) or **公有云** (`ChinaTencentCloud`) on
 | 独立站 | `capi.adp.tencent.com` | `https://adp.tencent.com/adp/v2/chat` | ADP console key, ~26 chars, not `AKID` |
 | 公有云 | `adp.tencentcloudapi.com` | `https://wss.lke.cloud.tencent.com/adp/v2/chat` | CAM `AKID…` (36 chars) |
 
-Switching to 独立站 does not make that 26-character AKSK work as `ADP_API_KEY`. Completions still need a gateway key on `api.adp.cloud.tencent.com`. Official ADP docs ([133869](https://cloud.tencent.com/document/product/1759/133869)) do not describe this gateway; they document CAM AKSK plus AppKey SSE chat.
+Switching to 独立站 does not make that 26-character AKSK work as `ADP_API_KEY`. Completions still need a gateway key on `api.adp.cloud.tencent.com`. There is no `api.adp.tencent.com`. Official ADP docs ([133869](https://cloud.tencent.com/document/product/1759/133869)) do not describe this gateway; they document CAM AKSK plus AppKey SSE chat. On the unprefixed path, HTTP 401 `AuthenticationError` means the gateway key is invalid or expired; HTTP 401 `not_authorized` means the client posted `/v1/chat/completions`.
 
 ## Gateway key
 

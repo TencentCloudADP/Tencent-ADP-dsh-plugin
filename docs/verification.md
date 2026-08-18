@@ -31,7 +31,9 @@ No Tencent credentials. HTTP is mocked at the process boundary (`tests/mock/http
 
 ### P1
 
-- [ ] `sim-provision` — CreateApp → Agent → Release poll; then FieldMask secret
+- [ ] `sim-provision` — CreateApp → Agent → CreateRelease `ReleaseId` → DescribeReleaseSummary `{ AppId, ReleaseId }`; then FieldMask secret
+- [ ] `sim-spaceid-scope` — cloud AKSK fills SpaceId on lists, not DescribeApp / DescribeAgentSummaryList
+- [ ] `sim-adp-call-json-string` — stringified `payload` is parsed, not dropped as `{}`
 - [ ] `sim-appkey-mask` — without FieldMask `SecretInfo` empty; with it, AppKey
 - [ ] `sim-appkey-absent` — failure text is “cannot get AppKey”; no fake ask tool
 - [ ] `sim-ask-sse` — interleaved thought+reply; model sees reply only
@@ -62,3 +64,6 @@ Live checks (manual or `test:live`):
 - [ ] no AKSK: model and search still work
 - [ ] no `sk-`: catalog may load, calls are `MISSING_CREDENTIAL`
 - [ ] unload the plugin row → tools / SkillProvider / MCP sessions gone
+- [ ] `skills-adp` lists plaza entries (`DescribeSkillSummaryList` without Perspective)
+- [ ] `control-adp` `adp_list_actions` + read `adp_call`; mutating stays gated
+- [ ] `agents-adp` CreateApp → CreateAgent → CreateRelease → poll `ReleaseId` → SSE ask; delete throwaway `dsh-e2e-*` apps. If CreateApp is `4900001` (account quota), live-check `DescribeReleaseSummary` with a real `ReleaseId` on an existing running app, then SSE ask.

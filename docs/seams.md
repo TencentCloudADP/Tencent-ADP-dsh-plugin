@@ -7,7 +7,7 @@ DSH’s rule is: hang a capability on an existing seam, do not start a second ru
 | New model vendor | `ctx.llm.registerAdapter` | `llm-adp` — see [How models work](#how-models-work-llm-adp) |
 | Replaceable search backend | `ctx.web` provider (existing `tool-web`) | `web-adp` — Hunyuan AI search plugin endpoint |
 | Model-callable tools | `ctx.tools.register` | `plugins-adp` API/MCP tools, `adp_plugin_list` / `adp_plugin_enable` |
-| Loadable instructions | `ctx.skills.registerProvider` | `skills-adp` (P1, disabled) |
+| Loadable instructions | `ctx.skills.registerProvider` | `skills-adp` |
 | Secrets | `ctx.credentials` **references** | three planes; never plaintext in patch |
 | Credentials settings card | `settings.plugin.item` + `credentials.set` | client half of `@tencent/dsh-adp`; OneID login-url proxy does not fill keys |
 | Long poll | `ctx.jobs.start` | release polling / generate Submit→Query |
@@ -35,7 +35,7 @@ After editing this repo, run `pnpm run prepare` (or `pnpm test`) and restart `ds
 
 ### Gateway completions vs AppKey SSE
 
-| | Gateway (`llm-adp`, on by default) | App SSE (`agents-adp`, disabled) |
+| | Gateway (`llm-adp`) | App SSE (`agents-adp`) |
 | --- | --- | --- |
 | Key | `ADP_API_KEY` | Published app AppKey |
 | URL | `api.adp.cloud.tencent.com/chat/completions` | `wss.lke…/adp/v2/chat` or `adp.tencent.com/adp/v2/chat` |

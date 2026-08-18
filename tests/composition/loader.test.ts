@@ -36,6 +36,10 @@ describe('bundle patch loader ids', () => {
     expect(() => assertUniqueLoaderIds(ids)).not.toThrow()
   })
 
+  it('skills, agents, and control ship enabled', () => {
+    expect(patch).not.toMatch(/disabled:\s*true/)
+  })
+
   it('two bundle layers of this patch duplicate adp-core', () => {
     expect(() => assertUniqueLoaderIds([...ids, ...ids])).toThrow(TypeError)
     expect(() => assertUniqueLoaderIds([...ids, ...ids])).toThrow(/duplicate loader entry id: adp-core/)

@@ -38,7 +38,7 @@ export function normalizeModelList(data: Record<string, unknown>): Array<{ id: s
   const out: Array<{ id: string; name: string; contextWindow?: number }> = []
   for (const row of rows) {
     const basic = asRecord(row.ModelBasic)
-    const id = pickString(basic?.ModelId, basic?.Model, basic?.Id, row.ModelId, row.Model, row.Id, row.Name)
+    const id = pickString(basic?.ModelId, basic?.Model, basic?.Id, row.ModelId, row.Model, row.ModelName, row.Id, row.Name)
     if (!id) continue
     const name = pickString(basic?.ModelName, basic?.Name, row.ModelName, row.Name, id)
     const ctx = Number(

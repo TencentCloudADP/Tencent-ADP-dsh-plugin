@@ -261,8 +261,60 @@ describe('live HTTP sims', () => {
     expect(actions).toContain('CreateAgent')
     expect(actions).toContain('CreateRelease')
     expect(actions).toContain('DescribeReleaseSummary')
+    const releasePoll = mock.calls.find((c) => c.action === 'DescribeReleaseSummary')
+    expect(releasePoll).toBeTruthy()
+    const pollBody = JSON.parse(releasePoll!.body) as { AppId?: string; ReleaseId?: string }
+    expect(pollBody.AppId).toBe('app-1')
+    expect(pollBody.ReleaseId).toBe('rel-1')
     const describe = mock.calls.filter((c) => c.action === 'DescribeApp').map((c) => JSON.parse(c.body) as { FieldMask?: { Paths?: string[] } })
     expect(describe.some((b) => b.FieldMask?.Paths?.includes('SecretInfo'))).toBe(true)
+    const createAgent = mock.calls.find((c) => c.action === 'CreateAgent')
+    expect(createAgent).toBeTruthy()
+    const agentBody = JSON.parse(createAgent!.body) as { Name?: string; Agent?: { Profile?: { Name?: string }; Model?: { ModelId?: string } } }
+    expect(agentBody.Name).toBeUndefined()
+    expect(agentBody.Agent?.Profile?.Name).toBe('demo-bot')
+    expect(agentBody.Agent?.Model?.ModelId).toBeTruthy()
+  })
+
+  it('sim-spaceid-scope: cloud AKSK fills SpaceId on lists, not DescribeApp', async () => {
+    mock = await startMockAdp()
+    const { ctx } = await bootAdp({
+      mock,
+      keys: { secretId: secrets.secretId, secretKey: secrets.secretKey },
+    })
+    await ctx.adp.call('DescribeApp', { AppId: 'app-1', FieldMask: { Paths: ['SecretInfo'] } })
+    const describe = JSON.parse(mock.calls.find((c) => c.action === 'DescribeApp')!.body) as { SpaceId?: string }
+    expect(describe.SpaceId).toBeUndefined()
+    await ctx.adp.call('DescribeAppSummaryList', { PageNumber: 0, PageSize: 10 })
+    const listed = JSON.parse(mock.calls.find((c) => c.action === 'DescribeAppSummaryList')!.body) as { SpaceId?: string }
+    expect(listed.SpaceId).toBe('default_space')
+    await ctx.adp.call('DescribeAgentSummaryList', { AppId: 'app-1' })
+    const agents = JSON.parse(mock.calls.find((c) => c.action === 'DescribeAgentSummaryList')!.body) as { SpaceId?: string }
+    expect(agents.SpaceId).toBeUndefined()
+  })
+
+  it('sim-adp-call-json-string: stringified payload is parsed, not dropped', async () => {
+    mock = await startMockAdp()
+    const { ctx } = await bootAdp({
+      mock,
+      keys: { secretId: secrets.secretId, secretKey: secrets.secretKey },
+    })
+    const result = await ctx.tools.execute(toolCall('adp_call', {
+      action: 'DescribeApp',
+      payload: '{"AppId":"app-1","FieldMask":{"Paths":["SecretInfo"]}}',
+    }))
+    expect(result.isError).toBeFalsy()
+    const body = JSON.parse(mock.calls.find((c) => c.action === 'DescribeApp')!.body) as {
+      AppId?: string
+      FieldMask?: { Paths?: string[] }
+    }
+    expect(body.AppId).toBe('app-1')
+    expect(body.FieldMask?.Paths).toEqual(['SecretInfo'])
+    const bad = await ctx.tools.execute(toolCall('adp_call', {
+      action: 'DescribeApp',
+      payload: '{not-json',
+    }))
+    expect(bad.isError).toBe(true)
   })
 
   it('sim-appkey-mask / sim-appkey-absent', async () => {
@@ -566,6 +618,13 @@ describe('normalizeModelList', () => {
       { id: 'Hunyuan/hy3', name: '混元', contextWindow: 256000 },
       { id: 'Deepseek/deepseek-v4-flash', name: 'Deepseek/deepseek-v4-flash' },
     ])
+  })
+
+  it('reads independent-site ListModel ModelName when ModelId is absent', () => {
+    const models = normalizeModelList({
+      List: [{ ModelName: 'Auto/auto', AliasName: 'Auto', MaxTokens: { Default: 4096 } }],
+    })
+    expect(models[0]).toMatchObject({ id: 'Auto/auto', name: 'Auto/auto' })
   })
 })
 

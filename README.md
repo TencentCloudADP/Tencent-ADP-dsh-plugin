@@ -42,23 +42,16 @@ See [docs/credentials.md](docs/credentials.md).
 
 ## Out of the box
 
-`adp-core`, `llm-adp`, `web-adp`, and `plugins-adp` start with the plugin:
+`adp-core`, `llm-adp`, `web-adp`, `plugins-adp`, `skills-adp`, `agents-adp`, and `control-adp` start with the plugin:
 
 - Select `adp:Hunyuan/hy3` (or another gateway model) and complete a tool-using turn. How catalog vs completions are wired: [docs/seams.md](docs/seams.md#how-models-work-llm-adp).
 - `web_search` through Hunyuan AI search when this provider is selected (China-centric index).
 - Enable an API or MCP marketplace plugin via `adp_plugin_list` / `adp_plugin_enable`, or `enabledPluginIds`. Public-cloud plugin/app calls need the workspace chosen above.
 - Generated media links (~24h COS) are saved into the workspace as `saved_files`.
-
-## Disabled by default
-
-`skills-adp`, `agents-adp`, and `control-adp` ship `disabled: true`. To enable a row, put the full row in your profile `cordis.patch.yml` without `disabled: true`. Patches replace the row; they do not deep-merge. Mutating control-plane calls require approval.
-
-Once enabled:
-
-- `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask AppKey → `adp_ask_<slug>`
-- `adp_ask` / `adp_ask_<slug>` — SSE ask; not a DSH subagent
-- Skill plaza as a `ctx.skills` provider (entries without download URLs stay in `list` only)
-- `adp_list_actions` / `adp_call` with `allowMutating` for App/Agent/Release CRUD
+- Skill plaza as a `ctx.skills` provider (entries without download URLs stay in `list` only).
+- `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask AppKey → `adp_ask_<slug>`.
+- `adp_ask` / `adp_ask_<slug>` — SSE ask; not a DSH subagent.
+- `adp_list_actions` / `adp_call` with `allowMutating` for App/Agent/Release CRUD. Mutating calls require approval.
 
 ## Not in this plugin
 

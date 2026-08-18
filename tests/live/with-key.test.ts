@@ -1,3 +1,4 @@
+import './env.ts'
 import { describe, it } from 'vitest'
 
 const required = ['ADP_API_KEY'] as const

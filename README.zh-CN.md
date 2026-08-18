@@ -42,23 +42,16 @@ ADP 有三把钥匙，不能互相顶替。配置里只写**引用名**（`ADP_A
 
 ## 装上即用
 
-`adp-core`、`llm-adp`、`web-adp`、`plugins-adp` 随插件启动：
+`adp-core`、`llm-adp`、`web-adp`、`plugins-adp`、`skills-adp`、`agents-adp`、`control-adp` 随插件启动：
 
 - 选 `adp:Hunyuan/hy3`（或其他网关模型），完成一轮带工具调用的对话。目录和补全怎么接：[docs/seams.md](docs/seams.md#how-models-work-llm-adp)。
 - 当前 provider 选中时，`web_search` 走混元 AI 搜索（偏国内索引）。
 - 用 `adp_plugin_list` / `adp_plugin_enable` 或 `enabledPluginIds` 打开市场里的 API / MCP 插件。公有云的应用和插件调用需要先选好工作空间。
 - 生成类媒体链接（COS，约 24 小时过期）会落到工作区 `saved_files`。
-
-## 默认关闭
-
-`skills-adp`、`agents-adp`、`control-adp` 随包带 `disabled: true`。要打开某一行，把整行写进 profile 的 `cordis.patch.yml`，并去掉 `disabled: true`。补丁按行替换，不做深合并。会改控制面的调用需要审批。
-
-打开后可用：
-
-- `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask 取 AppKey → `adp_ask_<slug>`
-- `adp_ask` / `adp_ask_<slug>` — SSE 问答；不是 DSH 子 agent
-- 技能广场作为 `ctx.skills` provider（没有下载 URL 的条目只出现在 `list`）
-- `adp_list_actions` / `adp_call`，配合 `allowMutating` 做 App/Agent/Release 的增删改
+- 技能广场作为 `ctx.skills` provider（没有下载 URL 的条目只出现在 `list`）。
+- `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask 取 AppKey → `adp_ask_<slug>`。
+- `adp_ask` / `adp_ask_<slug>` — SSE 问答；不是 DSH 子 agent。
+- `adp_list_actions` / `adp_call`，配合 `allowMutating` 做 App/Agent/Release 的增删改。会改控制面的调用需要审批。
 
 ## 本插件没有的
 
