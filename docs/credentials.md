@@ -4,6 +4,8 @@ Three keys, three planes. A value that works on one plane is rejected on the oth
 
 Pick **独立站** (`ChinaTencentADP`) or **公有云** (`ChinaTencentCloud`) on the Settings → Plugins card (or `adp-core.config.vendor` in the patch). That switch is the control plane and the agent SSE host. The OpenAI-compatible model gateway stays `https://api.adp.cloud.tencent.com` for both — independent site has no separate `api.adp.tencent.com`.
 
+Console paths (CAM vs ADP 密钥管理, workspace, AppKey) are in the README [Configure](../README.md#configure) / [配置：独立站 / 公有云](../README.zh-CN.md#配置独立站--公有云) section. Official: [API 概览](https://cloud.tencent.com/document/product/1759/133868), [工作空间](https://cloud.tencent.com/document/product/1759/122569), [CAM 密钥](https://cloud.tencent.com/document/product/598/40488).
+
 | Site | Control host | Agent SSE | SecretId |
 | --- | --- | --- | --- |
 | 独立站 | `capi.adp.tencent.com` | `https://adp.tencent.com/adp/v2/chat` | ADP console key, ~26 chars, not `AKID` |

@@ -2,6 +2,14 @@
 
 Ported from adpworker `CONTRIBUTING-ADP.md` and `docs/ADP-接口盘点与需求.md`. Each item names the fixture that pins it.
 
+## Install
+
+- `dsh plugin add` records the **package.json name** (`@tencent/dsh-adp`), not the folder name, and injects `cordis.patch.yml` as one profile bundle layer. Do not also pass `--patch ./cordis.patch.yml`, and do not copy those rows into the profile's `cordis.patch.yml` — either duplicates loader id `adp-core` and `dsh web` fails.
+- If this checkout was already linked under another name (the folder alias `adp-dsh-plugin` is the usual leftover), remove the old name, then add once: `dsh plugin --profile web remove adp-dsh-plugin`.
+- `~/.dsh/profiles/web/package.json` must list `@tencent/dsh-adp` once under both `dependencies` and `dsh.profile.bundles`. A profile `cordis.patch.yml` row that still says `name: adp-dsh-plugin` (even under a leftover id such as `mcp-tencent-cloud-docs`) is not this bundle — delete it; it re-registers `ctx.adp`.
+- Git installs fetch source and run `prepare` (tsdown). pnpm ≥10 blocks that until the package is listed under `allowBuilds` in the profile's `pnpm-workspace.yaml`. A `pnpm pack` tarball is already compiled and does not need that allowance.
+- After editing this checkout, run `pnpm run prepare` (or `pnpm test`) and restart `dsh web`; the profile link loads `lib/`, not `src/`.
+
 1. **Plugins are MCP *and* API.** Only wiring MCP drops half the marketplace. API tools live at `ToolConfig.ApiToolConfig.ExternalApiUrl`. Fixture: `tests/fixtures/control/plugin-detail-api.json`.
 
 2. **`MCPTransport` 0 = SSE, 1 = streamable-http.** POST to an SSE endpoint is 405. Never silently retry the other transport. Fixture / sim: `sim-plugin-mcp-405`.
