@@ -59,3 +59,5 @@ Ported from adpworker `CONTRIBUTING-ADP.md` and `docs/ADP-接口盘点与需求.
 24. **`adp_call` payload must be an object.** Models often stringify `type: json` args. A string body used to become `{}` and then `MissingParameter`. Parse JSON strings; keep objects. Sim: `sim-adp-call-json-string`.
 
 25. **App lists paginate with `PageNumber` / `PageSize`, 0-based.** `Offset` / `Limit` are ignored. `TotalCount` of hundreds with 15 rows means the first page only. Same for `DescribePluginSummaryList` (pitfall 5). `DescribeAgentSummaryList` is AppId-scoped and rejects `SpaceId`.
+
+26. **DSH ≥ 0.1.0-rc.7 keys `settings.plugin.item` on the settings namespace.** Passing only `id` (the rc.6 list-slot shape) throws `keyed slot "settings.plugin.item" requires options.key` and the Web UI fails the whole plugin. Register `key: 'adp-core'` (same string as `ADP_SITE_SETTINGS_NS`). Keep `id: 'adp-core'` so rc.6 list slots still accept the card. Sim: `sim-plugin-item-slot-key`.

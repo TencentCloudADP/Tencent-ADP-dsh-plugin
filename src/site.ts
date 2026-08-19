@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
+import { ADP_CORE_SETTINGS_NS } from './core/settings-ns.ts'
 import type { AdpService } from './core/service.ts'
 import {
   parseSiteVendor,
@@ -11,7 +12,7 @@ import {
 } from './core/hosts.ts'
 
 export const PROXY_SITE_PATH = '/adp/site'
-export const ADP_SITE_SETTINGS_NS = settingsNamespace('adp-core')
+export const ADP_SITE_SETTINGS_NS = settingsNamespace(ADP_CORE_SETTINGS_NS)
 
 export interface SiteSpace {
   id: string

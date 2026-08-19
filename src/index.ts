@@ -34,6 +34,7 @@ export {
   registerAdpWebRoutes,
 } from './account.ts'
 export type { LoginUrlResult } from './account.ts'
+export { ADP_CORE_SETTINGS_NS } from './core/settings-ns.ts'
 export {
   PROXY_SITE_PATH,
   ADP_SITE_SETTINGS_NS,

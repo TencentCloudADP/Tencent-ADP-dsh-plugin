@@ -1,4 +1,5 @@
 import type { Context } from '@deepseek-ai/cordis'
+import { ADP_CORE_SETTINGS_NS } from '../core/settings-ns.ts'
 import { AdpCredentialsCard, type ConnectionFace } from './AdpCredentialsCard.tsx'
 import { ADP_LOCALE_NS, dictionaries, type Translate } from './locales.ts'
 
@@ -8,7 +9,7 @@ export const inject = ['slots', 'connection', 'locale']
 type ClientSlots = {
   inject: (slot: string, factory: () => unknown) => void
   register: (
-    options: { name: string; id: string; order?: number; locale?: string },
+    options: { name: string; key: string; id?: string; locale?: string },
     component: unknown,
   ) => unknown
 }
@@ -29,7 +30,7 @@ export function apply(ctx: Context): void {
   const slots = (ctx as Context & { slots: ClientSlots }).slots
   slots.inject('settings.plugin.item', () =>
     slots.register(
-      { name: 'settings.plugin.item', id: 'adp-credentials', order: 5, locale: ADP_LOCALE_NS },
+      { name: 'settings.plugin.item', key: ADP_CORE_SETTINGS_NS, id: ADP_CORE_SETTINGS_NS, locale: ADP_LOCALE_NS },
       function AdpCredentialsBound({ t }: { t: Translate }) {
         return <AdpCredentialsCard connection={ctx.get('connection') as ConnectionFace | undefined} t={t} />
       },

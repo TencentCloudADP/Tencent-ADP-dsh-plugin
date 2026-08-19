@@ -9,7 +9,7 @@ DSH’s rule is: hang a capability on an existing seam, do not start a second ru
 | Model-callable tools | `ctx.tools.register` | `plugins-adp` API/MCP tools, `adp_plugin_list` / `adp_plugin_enable` |
 | Loadable instructions | `ctx.skills.registerProvider` | `skills-adp` |
 | Secrets | `ctx.credentials` **references** | three planes; never plaintext in patch |
-| Credentials settings card | `settings.plugin.item` + `credentials.set` | client half of `@tencent/dsh-adp`; OneID login-url proxy does not fill keys |
+| Credentials settings card | `settings.plugin.item` (`key: adp-core`) + `credentials.set` | client half of `@tencent/dsh-adp`; OneID login-url proxy does not fill keys |
 | Long poll | `ctx.jobs.start` | release polling / generate Submit→Query |
 | Remote agent that calls local tools | `ctx.subagents` | **not used** |
 

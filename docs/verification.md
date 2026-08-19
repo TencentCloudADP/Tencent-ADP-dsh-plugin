@@ -27,6 +27,7 @@ No Tencent credentials. HTTP is mocked at the process boundary (`tests/mock/http
 - [ ] `sim-patch-ids` — `cordis.patch.yml` insert ids are unique; applying the layer twice is `duplicate loader entry id: adp-core`
 - [ ] `sim-login-url` — `fetchLoginUrl` posts `{login_platform:"oneid"}` and unwraps `login_url`
 - [ ] `sim-site-settings` — site section injects `['settings', 'adp']`; settings.update failure is JSON 500, not an empty 400
+- [ ] `sim-plugin-item-slot-key` — client `settings.plugin.item` register uses `key: 'adp-core'` (DSH ≥ 0.1.0-rc.7 keyed slot); `lib/client.js` ships that key
 - [ ] `normalizeModelList` — flat `ModelId` and nested `ModelBasic.ModelId` both yield ids; empty `ModelBasic` is skipped
 
 ### P1
