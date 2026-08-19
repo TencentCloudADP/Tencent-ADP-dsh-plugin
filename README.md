@@ -2,10 +2,10 @@
 
 Tencent Cloud ADP as a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin bundle.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
-[![Node](https://img.shields.io/badge/node-%5E22.19%20%7C%7C%20%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
-[![GitHub stars](https://img.shields.io/github/stars/TencentCloudADP/Tencent-ADP-dsh-plugin)](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
+[License: MIT](LICENSE.txt)
+[Node](https://nodejs.org)
+[pnpm](https://pnpm.io)
+[GitHub stars](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
 
 [English](README.md) · [中文](README.zh-CN.md)
 
@@ -27,22 +27,28 @@ ADP has three credential planes. The patch stores **reference names** (`ADP_API_
 
 Official ADP API docs cover **control-plane AKSK** and **AppKey SSE chat**. They do not document the OpenAI-shaped model gateway this plugin also uses. Endpoints and key sources: [API overview](https://cloud.tencent.com/document/product/1759/133868). Planes and error codes: [docs/credentials.md](docs/credentials.md).
 
-![Settings → Plugins → Tencent Cloud ADP card](assets/screenshot-settings.png)
+Settings → Plugins → Tencent Cloud ADP card
 
-| Plane | Reference | Official source | If missing |
-| --- | --- | --- | --- |
-| Gateway `sk-` | `ADP_API_KEY` | Model-gateway API key (undocumented; see [docs/credentials.md](docs/credentials.md)) | LLM / search / plugin **calls** fail with `MISSING_CREDENTIAL` |
-| SecretId / SecretKey | `ADP_SECRET_ID` / `ADP_SECRET_KEY` | Public cloud: [CAM API keys](https://cloud.tencent.com/document/product/598/40488). Independent site: ADP console **Key Management** | Model / plugin / app **catalogs** stay empty |
-| Per-app AppKey | e.g. `ADP_APP_KEY_DEMO` | [App publish → API management](https://cloud.tencent.com/document/product/1759/104209) or app **Invoke** ([SSE](https://cloud.tencent.com/document/product/1759/105561)) | The matching ask tool is not registered |
+
+| Plane                | Reference                          | Official source                                                                                                                                                          | If missing                                                     |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| Gateway `sk-`        | `ADP_API_KEY`                      | Model-gateway API key (undocumented; see [docs/credentials.md](docs/credentials.md))                                                                                     | LLM / search / plugin **calls** fail with `MISSING_CREDENTIAL` |
+| SecretId / SecretKey | `ADP_SECRET_ID` / `ADP_SECRET_KEY` | Public cloud: [CAM API keys](https://cloud.tencent.com/document/product/598/40488). Independent site: ADP console **Key Management**                                     | Model / plugin / app **catalogs** stay empty                   |
+| Per-app AppKey       | e.g. `ADP_APP_KEY_DEMO`            | [App publish → API management](https://cloud.tencent.com/document/product/1759/104209) or app **Invoke** ([SSE](https://cloud.tencent.com/document/product/1759/105561)) | The matching ask tool is not registered                        |
+
+
+
 
 ### 1. Open ADP
 
 Register and complete real-name verification, then open the product ([product overview](https://cloud.tencent.com/document/product/1759/104193)). First login creates one enterprise and a **default workspace**; that workspace is not the string `default_space` this plugin ships in the patch ([workspace overview](https://cloud.tencent.com/document/product/1759/122569)).
 
-| Site | Console | Control host | Agent SSE |
-| --- | --- | --- | --- |
-| **Independent site** | [adp.tencent.com](https://adp.tencent.com) | `capi.adp.tencent.com` | `https://adp.tencent.com/adp/v2/chat` |
-| **Public cloud** | [adp.cloud.tencent.com](https://adp.cloud.tencent.com) | `adp.tencentcloudapi.com` | `https://wss.lke.cloud.tencent.com/adp/v2/chat` |
+
+| Site                 | Console                                                | Control host              | Agent SSE                                       |
+| -------------------- | ------------------------------------------------------ | ------------------------- | ----------------------------------------------- |
+| **Independent site** | [adp.tencent.com](https://adp.tencent.com)             | `capi.adp.tencent.com`    | `https://adp.tencent.com/adp/v2/chat`           |
+| **Public cloud**     | [adp.cloud.tencent.com](https://adp.cloud.tencent.com) | `adp.tencentcloudapi.com` | `https://wss.lke.cloud.tencent.com/adp/v2/chat` |
+
 
 Both sites complete against `https://api.adp.cloud.tencent.com/chat/completions` (no `/v1`). There is no `api.adp.tencent.com`.
 
@@ -72,6 +78,8 @@ Needed only for `adp_ask` / `adp_ask_<slug>` (SSE to a published app), not for p
 1. Publish the app.
 2. Open **App Publish → Service Status → API Management**, or **App Management → Invoke**, and copy AppKey ([104209](https://cloud.tencent.com/document/product/1759/104209), [105560](https://cloud.tencent.com/document/product/1759/105560)).
 
+
+
 ### 5. Fill the DSH card
 
 1. Run `dsh web` on loopback (`127.0.0.1`). Credential writes are loopback-only.
@@ -89,7 +97,7 @@ A Claw-style “build the app entirely via API” walkthrough (CreateSpace → C
 
 `adp-core`, `llm-adp`, `web-adp`, `plugins-adp`, `skills-adp`, `agents-adp`, and `control-adp` start with the plugin:
 
-![Model picker — Tencent Cloud ADP group](assets/screenshot-models.png)
+Model picker — Tencent Cloud ADP group
 
 - Select `adp:Hunyuan/hy3` (or another gateway model) and complete a tool-using turn. How catalog vs completions are wired: [docs/seams.md](docs/seams.md#how-models-work-llm-adp).
 - `web_search` through Hunyuan AI search when this provider is selected (China-centric index).
@@ -100,10 +108,6 @@ A Claw-style “build the app entirely via API” walkthrough (CreateSpace → C
 - `adp_ask` / `adp_ask_<slug>` — SSE ask; not a DSH subagent.
 - `adp_list_actions` / `adp_call` with `allowMutating` for App/Agent/Release CRUD. Mutating calls require approval.
 
-## Not in this plugin
-
-OneID login does not fill these credentials (the settings card says so). A cloud agent cannot call local DSH tools. Code-class plugins do not run inside DSH.
-
 ## Documentation
 
 - [docs/credentials.md](docs/credentials.md) — where each key comes from and what breaks without it
@@ -111,12 +115,16 @@ OneID login does not fill these credentials (the settings card says so). A cloud
 - [docs/pitfalls.md](docs/pitfalls.md) — known traps
 - [docs/verification.md](docs/verification.md) — manual checklist
 
+
+
 ## Verify
 
 ```sh
 pnpm test         # simulated HTTP; no secrets; CI gate
 pnpm test:live    # real account; skips when env is absent
 ```
+
+
 
 ## Contributing
 

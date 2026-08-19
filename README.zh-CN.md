@@ -2,10 +2,10 @@
 
 把腾讯云 ADP 接到 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的插件包。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
-[![Node](https://img.shields.io/badge/node-%5E22.19%20%7C%7C%20%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
-[![GitHub stars](https://img.shields.io/github/stars/TencentCloudADP/Tencent-ADP-dsh-plugin)](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
+[License: MIT](LICENSE.txt)
+[Node](https://nodejs.org)
+[pnpm](https://pnpm.io)
+[GitHub stars](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
 
 [English](README.md) · [中文](README.zh-CN.md)
 
@@ -27,7 +27,7 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 
 官方 API 文档覆盖的是**控制面 AKSK**和**AppKey SSE 对话**。本插件还用一条 OpenAI 形态的模型网关，官方概览没有写这条。端点和密钥出处见 [API 概览](https://cloud.tencent.com/document/product/1759/133868)。平面和报错见 [docs/credentials.md](docs/credentials.md)。
 
-![设置 → 插件配置 → 腾讯云 ADP 卡片](assets/screenshot-settings.png)
+设置 → 插件配置 → 腾讯云 ADP 卡片
 
 
 | 平面                   | 引用名                                | 官方出处                                                                                                                                              | 缺失时                                       |
@@ -97,7 +97,7 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 
 `adp-core`、`llm-adp`、`web-adp`、`plugins-adp`、`skills-adp`、`agents-adp`、`control-adp` 随插件启动：
 
-![模型选择器里的 Tencent Cloud ADP 分组](assets/screenshot-models.png)
+模型选择器里的 Tencent Cloud ADP 分组
 
 - 选 `adp:Hunyuan/hy3`（或其他网关模型），完成一轮带工具调用的对话。目录和补全怎么接：[docs/seams.md](docs/seams.md#how-models-work-llm-adp)。
 - 当前 provider 选中时，`web_search` 走混元 AI 搜索（偏国内索引）。
@@ -107,12 +107,6 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 - `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask 取 AppKey → `adp_ask_<slug>`。
 - `adp_ask` / `adp_ask_<slug>` — SSE 问答；不是 DSH 子 agent。
 - `adp_list_actions` / `adp_call`，配合 `allowMutating` 做 App/Agent/Release 的增删改。会改控制面的调用需要审批。
-
-
-
-## 不包含的功能
-
-OneID 登录不会写入凭证（设置卡片上写明了）。云端 agent 调不了本机 DSH 工具。Code 类插件不会在 DSH 里跑。
 
 ## 文档
 
