@@ -14,6 +14,8 @@ This plugin connects a DSH profile to Tencent Cloud ADP: gateway models (Hunyuan
 ## Install
 
 ```sh
+git clone https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin.git
+cd Tencent-ADP-dsh-plugin
 dsh plugin --profile web add .
 # or a packed tarball: dsh plugin --profile web add ./tencent-dsh-adp-0.1.0.tgz
 dsh web
@@ -99,10 +101,6 @@ A Claw-style “build the app entirely via API” walkthrough (CreateSpace → C
 - `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask AppKey → `adp_ask_<slug>`.
 - `adp_ask` / `adp_ask_<slug>` — SSE ask; not a DSH subagent.
 - `adp_list_actions` / `adp_call` with `allowMutating` for App/Agent/Release CRUD. Mutating calls require approval.
-
-## Not in this plugin
-
-OneID login does not fill these credentials (the settings card says so). A cloud agent cannot call local DSH tools. Code-class plugins do not run inside DSH.
 
 ## Documentation
 

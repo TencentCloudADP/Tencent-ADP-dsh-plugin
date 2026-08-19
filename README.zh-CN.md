@@ -14,6 +14,8 @@
 ## 安装
 
 ```sh
+git clone https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin.git
+cd Tencent-ADP-dsh-plugin
 dsh plugin --profile web add .
 # 或安装打好的 tarball：dsh plugin --profile web add ./tencent-dsh-adp-0.1.0.tgz
 dsh web
@@ -109,10 +111,6 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 - `adp_list_actions` / `adp_call`，配合 `allowMutating` 做 App/Agent/Release 的增删改。会改控制面的调用需要审批。
 
 
-
-## 不包含的功能
-
-OneID 登录不会写入凭证（设置卡片上写明了）。云端 agent 调不了本机 DSH 工具。Code 类插件不会在 DSH 里跑。
 
 ## 文档
 
