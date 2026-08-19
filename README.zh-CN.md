@@ -65,3 +65,7 @@ pnpm test:live    # 真实账号；环境变量缺失则跳过
 ```
 
 清单：[docs/verification.md](docs/verification.md)。对接：[docs/seams.md](docs/seams.md)。踩坑：[docs/pitfalls.md](docs/pitfalls.md)。
+
+## 许可证
+
+MIT。Copyright (C) 2026 Tencent。正文和第三方声明见 [LICENSE.txt](LICENSE.txt)（`eventsource-parser`、`fflate`）。

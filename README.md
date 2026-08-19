@@ -65,3 +65,7 @@ pnpm test:live    # real account; skips when env is absent
 ```
 
 Checklist: [docs/verification.md](docs/verification.md). Contracts: [docs/seams.md](docs/seams.md). Pitfalls: [docs/pitfalls.md](docs/pitfalls.md).
+
+## License
+
+MIT. Copyright (C) 2026 Tencent. See [LICENSE.txt](LICENSE.txt) for the text and third-party notices (`eventsource-parser`, `fflate`).

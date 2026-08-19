@@ -2,6 +2,7 @@
   "name": "@tencent/dsh-adp",
   "version": "0.1.0",
   "description": "Tencent Cloud ADP as a DeepSeek Harness out-of-tree plugin bundle",
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.14.0",
   "engines": {
@@ -49,6 +50,7 @@
     "assets",
     "cordis.patch.yml",
     "README.md",
+    "LICENSE.txt",
     "docs"
   ],
   "scripts": {
