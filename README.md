@@ -2,10 +2,10 @@
 
 Tencent Cloud ADP as a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin bundle.
 
-[License: MIT](LICENSE.txt)
-[Node](https://nodejs.org)
-[pnpm](https://pnpm.io)
-[GitHub stars](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
+[![Node](https://img.shields.io/badge/node-%5E22.19%20%7C%7C%20%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
+[![GitHub stars](https://img.shields.io/github/stars/TencentCloudADP/Tencent-ADP-dsh-plugin)](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
 
 [English](README.md) · [中文](README.zh-CN.md)
 
@@ -26,6 +26,8 @@ Then open Settings → Plugins → **Tencent Cloud ADP** and fill in credentials
 ADP has three credential planes. The patch stores **reference names** (`ADP_API_KEY`, …); values live in `$DSH_HOME/.credentials.yaml` or the environment.
 
 Official ADP API docs cover **control-plane AKSK** and **AppKey SSE chat**. They do not document the OpenAI-shaped model gateway this plugin also uses. Endpoints and key sources: [API overview](https://cloud.tencent.com/document/product/1759/133868). Planes and error codes: [docs/credentials.md](docs/credentials.md).
+
+![Settings → Plugins → Tencent Cloud ADP card](assets/screenshot-settings.png)
 
 | Plane | Reference | Official source | If missing |
 | --- | --- | --- | --- |
@@ -86,6 +88,8 @@ A Claw-style “build the app entirely via API” walkthrough (CreateSpace → C
 ## What you get
 
 `adp-core`, `llm-adp`, `web-adp`, `plugins-adp`, `skills-adp`, `agents-adp`, and `control-adp` start with the plugin:
+
+![Model picker — Tencent Cloud ADP group](assets/screenshot-models.png)
 
 - Select `adp:Hunyuan/hy3` (or another gateway model) and complete a tool-using turn. How catalog vs completions are wired: [docs/seams.md](docs/seams.md#how-models-work-llm-adp).
 - `web_search` through Hunyuan AI search when this provider is selected (China-centric index).
