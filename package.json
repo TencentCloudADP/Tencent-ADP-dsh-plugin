@@ -4,7 +4,7 @@
   "description": "Tencent Cloud ADP as a DeepSeek Harness out-of-tree plugin bundle",
   "license": "MIT",
   "type": "module",
-  "packageManager": "pnpm@10.14.0",
+  "packageManager": "pnpm@11.22.0",
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
