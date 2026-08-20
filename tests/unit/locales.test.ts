@@ -31,7 +31,16 @@ describe('adp locales', () => {
   })
 
   it('interpolates {name} placeholders', () => {
-    expect(t('zh', 'expandAria', { name: '腾讯云 ADP' })).toBe('展开：腾讯云 ADP')
+    expect(t('zh', 'expandAria', { name: '腾讯云 ADP' })).toBe('展开：{name}'.replace('{name}', '腾讯云 ADP'))
     expect(t('en', 'envLocked', { ref: 'ADP_API_KEY' })).toContain('ADP_API_KEY')
+  })
+
+  it('field help copy names the real console paths in both languages', () => {
+    expect(t('zh', 'helpApiKey')).toContain('DeepSeek API')
+    expect(t('en', 'helpApiKey')).toContain('DeepSeek API')
+    expect(t('zh', 'helpSecretIdStandalone')).toContain('26')
+    expect(t('en', 'helpSecretIdCloud')).toContain('AKID')
+    expect(t('zh', 'helpSecretKeyCloud')).toContain('仅展示一次')
+    expect(t('en', 'helpAppKey')).toMatch(/API Management/)
   })
 })
