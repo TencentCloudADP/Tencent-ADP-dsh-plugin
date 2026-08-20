@@ -52,6 +52,14 @@ export const en = {
   discard: 'Discard',
   save: 'Save',
   saving: 'Saving…',
+  helpAria: 'How to get {ref}',
+  helpGo: 'Go get it',
+  helpApiKey: 'Open Knowledge Engine console (LKEAP) → DeepSeek API → Create: copy the generated sk- key.',
+  helpSecretIdStandalone: 'Open the ADP console (adp.tencent.com) → Key Management → API key: copy the ~26-char SecretID (not AKID).',
+  helpSecretIdCloud: 'Open CAM → API Key Management → Create: copy the AKID… SecretId.',
+  helpSecretKeyStandalone: 'Open the ADP console (adp.tencent.com) → Key Management → API key: copy the SecretKey shown at creation.',
+  helpSecretKeyCloud: 'Open CAM → API Key Management → Create: copy the SecretKey shown once at creation.',
+  helpAppKey: 'Publish the app first, then App Publish → Service Status → API Management: copy the AppKey.',
 } as const satisfies Record<string, string>
 
 /** Simplified Chinese copy (DSH language id `zh`). */
@@ -98,6 +106,14 @@ export const zh = {
   discard: '放弃修改',
   save: '保存',
   saving: '保存中…',
+  helpAria: '如何获取 {ref}',
+  helpGo: '前往获取',
+  helpApiKey: '打开 知识引擎控制台（lkeap）→ DeepSeek API → 新建：复制生成的 sk- 密钥填入这里。',
+  helpSecretIdStandalone: '打开 ADP 控制台（adp.tencent.com）→ 密钥管理 → API密钥：复制约 26 位的 SecretID（不是 AKID 开头）。',
+  helpSecretIdCloud: '打开 CAM → API密钥管理 → 新建密钥：复制 AKID 开头的 SecretId。',
+  helpSecretKeyStandalone: '打开 ADP 控制台（adp.tencent.com）→ 密钥管理 → API密钥：复制创建时展示的 SecretKey。',
+  helpSecretKeyCloud: '打开 CAM → API密钥管理 → 新建密钥：复制创建时仅展示一次的 SecretKey。',
+  helpAppKey: '先发布应用，再打开 应用发布 → 服务状态 → API管理：复制 AppKey。',
 } as const satisfies Record<AdpLocaleKey, string>
 
 const DICTS: Record<AdpLocaleId, Record<AdpLocaleKey, string>> = { en, zh }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Button, IconChevronDownOutline14, Input, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import { AdpIcon } from './AdpIcon.tsx'
 import { t as catalogT, type AdpLocaleKey, type Translate } from './locales.ts'
@@ -26,7 +26,8 @@ const CSS = `
 .adp-dsh-field{flex-direction:column;gap:6px;padding:12px 0;display:flex}
 .adp-dsh-field+.adp-dsh-field{border-top:1px solid var(--dsw-alias-border-l2)}
 .adp-dsh-fieldHead{align-items:center;gap:8px;display:flex}
-.adp-dsh-label{min-width:0;color:var(--dsw-alias-label-primary);flex:1;font-size:13px;font-weight:500;line-height:1.5}
+.adp-dsh-labelGroup{min-width:0;flex:1;display:flex;align-items:center;gap:6px}
+.adp-dsh-label{min-width:0;color:var(--dsw-alias-label-primary);font-size:13px;font-weight:500;line-height:1.5}
 .adp-dsh-badges{align-items:center;gap:8px;display:inline-flex}
 .adp-dsh-badge{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px;display:inline-flex;align-items:center;gap:6px}
 .adp-dsh-footer{border-top:1px solid var(--dsw-alias-border-l2);justify-content:flex-end;align-items:center;gap:8px;padding:12px 0 4px;display:flex}
@@ -44,6 +45,14 @@ const CSS = `
 .adp-dsh-spaceSelect,.adp-dsh-spaceInput{appearance:none;font:inherit;color:inherit;width:100%;border:1px solid var(--dsw-alias-border-l2);background:transparent;border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4}
 .adp-dsh-spaceSelect:focus-visible,.adp-dsh-spaceInput:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .adp-dsh-spaceRow{display:flex;gap:8px;align-items:center}
+.adp-dsh-helpWrap{position:relative;display:inline-flex;flex:none;padding:6px;margin:-6px}
+.adp-dsh-helpBtn{appearance:none;font:inherit;cursor:pointer;width:16px;height:16px;border-radius:50%;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:14px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.adp-dsh-helpBtn:hover{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary)}
+.adp-dsh-helpBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.adp-dsh-helpBubble{position:absolute;top:calc(100% + 6px);left:0;z-index:10;width:280px;max-width:min(280px,calc(100vw - 48px));background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.5;color:var(--dsw-alias-label-secondary);box-shadow:0 4px 12px rgba(0,0,0,.12);white-space:normal;text-align:left}
+.adp-dsh-helpBubble::before{content:'';position:absolute;top:-10px;left:0;right:0;height:10px}
+.adp-dsh-helpBubble a{color:var(--dsw-alias-brand-primary);text-decoration:none;font-weight:500;display:inline-block;margin-top:6px}
+.adp-dsh-helpBubble a:hover{text-decoration:underline}
 `
 
 function ensureStyles(): void {
@@ -87,12 +96,43 @@ type CredRef = (typeof REFS)[number]
 const FIELDS: Array<{
   ref: CredRef
   hintKey: AdpLocaleKey
+  helpKeys?: { standalone: AdpLocaleKey; cloud: AdpLocaleKey }
+  helpUrl?: (vendor: SiteVendor, spaceId?: string) => string
   optional?: boolean
 }> = [
-  { ref: 'ADP_API_KEY', hintKey: 'hintApiKey' },
-  { ref: 'ADP_SECRET_ID', hintKey: 'hintSecretId' },
-  { ref: 'ADP_SECRET_KEY', hintKey: 'hintSecretKey' },
-  { ref: 'ADP_APP_KEY', hintKey: 'hintAppKey', optional: true },
+  {
+    ref: 'ADP_API_KEY',
+    hintKey: 'hintApiKey',
+    helpKeys: { standalone: 'helpApiKey', cloud: 'helpApiKey' },
+    helpUrl: () => 'https://console.cloud.tencent.com/lkeap/api',
+  },
+  {
+    ref: 'ADP_SECRET_ID',
+    hintKey: 'hintSecretId',
+    helpKeys: { standalone: 'helpSecretIdStandalone', cloud: 'helpSecretIdCloud' },
+    helpUrl: (vendor) => vendor === 'ChinaTencentADP'
+      ? 'https://adp.tencent.com/adp#/key-manage'
+      : 'https://console.cloud.tencent.com/cam/capi',
+  },
+  {
+    ref: 'ADP_SECRET_KEY',
+    hintKey: 'hintSecretKey',
+    helpKeys: { standalone: 'helpSecretKeyStandalone', cloud: 'helpSecretKeyCloud' },
+    helpUrl: (vendor) => vendor === 'ChinaTencentADP'
+      ? 'https://adp.tencent.com/adp#/key-manage'
+      : 'https://console.cloud.tencent.com/cam/capi',
+  },
+  {
+    ref: 'ADP_APP_KEY',
+    hintKey: 'hintAppKey',
+    helpKeys: { standalone: 'helpAppKey', cloud: 'helpAppKey' },
+    helpUrl: (vendor, spaceId) => vendor === 'ChinaTencentADP'
+      ? (spaceId ? `https://adp.tencent.com/adp/#/app/home?spaceId=${encodeURIComponent(spaceId)}` : 'https://adp.tencent.com/adp/#/app/home')
+      : (spaceId && spaceId !== 'default_space'
+          ? `https://adp.cloud.tencent.com/adp/#/app/home?spaceId=${encodeURIComponent(spaceId)}`
+          : 'https://adp.cloud.tencent.com/app'),
+    optional: true,
+  },
 ]
 
 const EMPTY_VIEWS: Record<CredRef, CredentialView> = {
@@ -110,6 +150,67 @@ function stateLabel(view: CredentialView): { key: AdpLocaleKey; state: 'done' | 
   if (!view.configured) return { key: 'stateMissing', state: 'warning' }
   if (!view.writable) return { key: 'stateEnv', state: 'done' }
   return { key: 'stateSaved', state: 'done' }
+}
+
+function FieldHelp({
+  fieldRef,
+  helpKeys,
+  helpUrl,
+  vendor,
+  spaceId,
+  t,
+}: {
+  fieldRef: CredRef
+  helpKeys?: { standalone: AdpLocaleKey; cloud: AdpLocaleKey }
+  helpUrl?: (vendor: SiteVendor, spaceId?: string) => string
+  vendor: SiteVendor
+  spaceId?: string
+  t: Translate
+}): JSX.Element | null {
+  const [show, setShow] = useState(false)
+  const hideTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(hideTimer.current), [])
+  if (!helpKeys || !helpUrl) return null
+  const key = vendor === 'ChinaTencentADP' ? helpKeys.standalone : helpKeys.cloud
+  const url = helpUrl(vendor, spaceId)
+  const cancelHide = (): void => {
+    window.clearTimeout(hideTimer.current)
+  }
+  const scheduleHide = (): void => {
+    cancelHide()
+    hideTimer.current = window.setTimeout(() => setShow(false), 200)
+  }
+  return (
+    <span
+      className="adp-dsh-helpWrap"
+      onMouseEnter={() => {
+        cancelHide()
+        setShow(true)
+      }}
+      onMouseLeave={scheduleHide}
+      onFocus={() => {
+        cancelHide()
+        setShow(true)
+      }}
+      onBlur={scheduleHide}
+    >
+      <button
+        type="button"
+        className="adp-dsh-helpBtn"
+        aria-label={t('helpAria', { ref: fieldRef })}
+        aria-expanded={show}
+        onClick={() => setShow((value) => !value)}
+      >
+        ?
+      </button>
+      {show ? (
+        <span className="adp-dsh-helpBubble" role="tooltip">
+          {t(key)}
+          <a href={url} target="_blank" rel="noopener noreferrer">{t('helpGo')} →</a>
+        </span>
+      ) : null}
+    </span>
+  )
 }
 
 export function AdpCredentialsCard({
@@ -454,10 +555,13 @@ export function AdpCredentialsCard({
               return (
                 <div className="adp-dsh-field" key={field.ref}>
                   <div className="adp-dsh-fieldHead">
-                    <label className="adp-dsh-label" htmlFor={fieldId}>
-                      {field.ref}
-                      {field.optional ? t('optionalSuffix') : ''}
-                    </label>
+                    <span className="adp-dsh-labelGroup">
+                      <label className="adp-dsh-label" htmlFor={fieldId}>
+                        {field.ref}
+                        {field.optional ? t('optionalSuffix') : ''}
+                      </label>
+                      <FieldHelp fieldRef={field.ref} helpKeys={field.helpKeys} helpUrl={field.helpUrl} vendor={vendor} spaceId={spaceId} t={t} />
+                    </span>
                     <span className="adp-dsh-badges">
                       <span className="adp-dsh-badge">
                         <StateDot state={badge.state} size={8} />
