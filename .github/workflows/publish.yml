@@ -77,4 +77,6 @@ jobs:
           npm pack --dry-run
 
       - name: Publish package with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public --provenance
