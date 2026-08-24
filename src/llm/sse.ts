@@ -45,14 +45,26 @@ interface WireChunk {
       content?: string | null
       reasoning_content?: string | null
       tool_calls?: Array<{
-        index: number
-        id?: string
-        function?: { name?: string; arguments?: string }
+        index?: number
+        id?: string | null
+        function?: { name?: string | null; arguments?: string | Record<string, unknown> | null }
       }>
     }
     finish_reason?: string | null
   }>
   usage?: WireUsage
+}
+
+/** First non-empty identity wins. Continuation deltas often repeat id/name as "" or null. */
+function keepIdentity(current: string | undefined, next: string | null | undefined): string | undefined {
+  if (typeof next === 'string' && next.length > 0) return next
+  return current
+}
+
+function argumentsFragment(value: string | Record<string, unknown> | null | undefined): string {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object') return JSON.stringify(value)
+  return ''
 }
 
 export function mapFinishReason(reason: string): FinishReason {
@@ -152,21 +164,22 @@ export async function* translate(payloads: AsyncIterable<string>): AsyncGenerato
         yield { type: 'text-delta', index: textBlock.index, text: content }
       }
       for (const call of delta?.tool_calls ?? []) {
-        let block = toolBlocks.get(call.index)
+        const wireIndex = call.index ?? toolBlocks.size
+        let block = toolBlocks.get(wireIndex)
         if (!block) {
           block = open('tool-call')
-          toolBlocks.set(call.index, block)
+          toolBlocks.set(wireIndex, block)
           yield { type: 'block-start', index: block.index, blockType: 'tool-call' }
         }
-        if (call.id !== undefined) block.callId = call.id
-        if (call.function?.name !== undefined) block.name = call.function.name
-        const fragment = call.function?.arguments ?? ''
+        block.callId = keepIdentity(block.callId, call.id)
+        block.name = keepIdentity(block.name, call.function?.name)
+        const fragment = argumentsFragment(call.function?.arguments)
         block.text += fragment
         yield {
           type: 'tool-call-delta',
           index: block.index,
           id: CallId(block.callId ?? ''),
-          ...block.name !== undefined ? { name: block.name } : {},
+          ...block.name ? { name: block.name } : {},
           argumentsDelta: fragment,
         }
       }

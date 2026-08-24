@@ -2,7 +2,7 @@ import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import type { Context } from '@deepseek-ai/cordis'
 import { AdpError } from '../core/errors.ts'
 import { MODEL_SCENE_AGENT, MODEL_SCENE_CLAW, normalizeModelList } from '../core/models.ts'
-import { agentToolName, kebab } from '../core/names.ts'
+import { agentToolName, appKeyRefForSlug, askSlug } from '../core/names.ts'
 import type { AdpService } from '../core/service.ts'
 
 export interface ProvisionInput {
@@ -21,6 +21,8 @@ export interface ProvisionReady {
   agentId: string
   askTool: string
   appKeyRef: string
+  /** Always-registered fallback: DSH may not expose a mid-session `adp_ask_<slug>` until the next turn. */
+  ask: { tool: 'adp_ask'; appKeyEnv: string }
 }
 
 export interface ProvisionNeedsKey {
@@ -79,8 +81,8 @@ export async function provisionAgent(
     await pollRelease(adp, appId, releaseId, signal)
 
     const appKey = await fetchAppKey(adp, appId, signal)
-    const slug = kebab(input.name) || agentToolName(input.name).replace(/^adp_ask_/, '')
-    const askTool = `adp_ask_${slug}`.slice(0, 60)
+    const slug = askSlug(input.name)
+    const askTool = agentToolName(input.name)
     if (!appKey) {
       return {
         kind: 'needs_appkey',
@@ -90,9 +92,16 @@ export async function provisionAgent(
           'Release succeeded but AppKey was not returned. DescribeApp needs FieldMask.Paths=["SecretInfo"]; if that is still empty, copy the AppKey from the console and bind it with agents-adp agents[].appKeyEnv. A fake ask tool was not registered.',
       }
     }
-    const appKeyRef = `ADP_APP_KEY_${slug.replace(/-/g, '_').toUpperCase()}`.replace(/[^A-Z0-9_]/g, '_')
+    const appKeyRef = appKeyRefForSlug(slug)
     await ctx.credentials.set(credentialRef(appKeyRef), appKey)
-    return { kind: 'ready', appId, agentId, askTool, appKeyRef }
+    return {
+      kind: 'ready',
+      appId,
+      agentId,
+      askTool,
+      appKeyRef,
+      ask: { tool: 'adp_ask', appKeyEnv: appKeyRef },
+    }
   } catch (error) {
     try {
       await adp.call('DeleteApp', { AppId: appId }, signal)

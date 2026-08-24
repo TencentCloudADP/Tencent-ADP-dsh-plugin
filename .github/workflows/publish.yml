@@ -1,0 +1,80 @@
+name: Publish npm package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Require release tag to match package version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          package_version="$(node -p "require('./package.json').version")"
+          if [ "$RELEASE_TAG" != "v$package_version" ]; then
+            echo "Release tag $RELEASE_TAG must equal v$package_version" >&2
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build package
+        run: pnpm run build
+
+      - name: Verify published entry points
+        run: |
+          for entry in \
+            lib/index.js \
+            lib/llm/index.js \
+            lib/web/index.js \
+            lib/plugins/index.js \
+            lib/skills/index.js \
+            lib/agents/index.js \
+            lib/control/index.js \
+            lib/client.js
+          do
+            test -f "$entry" || {
+              echo "Missing package entry point: $entry" >&2
+              exit 1
+            }
+          done
+          npm pack --dry-run
+
+      - name: Publish package with provenance
+        run: npm publish --access public --provenance

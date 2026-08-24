@@ -20,7 +20,7 @@ if (body.startsWith('window.__ModuleLoader__.load')) {
 }
 
 const wrapped = `window.__ModuleLoader__.load({
-  id: "@tencent/dsh-adp",
+  id: "@tencentcloudadp/dsh-adp",
   factory: (require) => {
     var module = { exports: {} };
     var exports = module.exports;

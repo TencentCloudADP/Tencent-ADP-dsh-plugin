@@ -3,7 +3,7 @@ import { ADP_CORE_SETTINGS_NS } from '../core/settings-ns.ts'
 import { AdpCredentialsCard, type ConnectionFace } from './AdpCredentialsCard.tsx'
 import { ADP_LOCALE_NS, dictionaries, type Translate } from './locales.ts'
 
-export const name = '@tencent/dsh-adp'
+export const name = '@tencentcloudadp/dsh-adp'
 export const inject = ['slots', 'connection', 'locale']
 
 type ClientSlots = {

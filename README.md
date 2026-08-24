@@ -1,4 +1,4 @@
-# @tencent/dsh-adp
+# @tencentcloudadp/dsh-adp
 
 Tencent Cloud ADP as a [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin bundle.
 
@@ -14,10 +14,7 @@ This plugin connects a DSH profile to Tencent Cloud ADP: gateway models (Hunyuan
 ## Install
 
 ```sh
-git clone https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin.git
-cd Tencent-ADP-dsh-plugin
-dsh plugin --profile web add .
-# or a packed tarball: dsh plugin --profile web add ./tencent-dsh-adp-0.1.0.tgz
+dsh plugin --profile web add @tencentcloudadp/dsh-adp
 dsh web
 ```
 
@@ -33,7 +30,7 @@ Official ADP API docs cover **control-plane AKSK** and **AppKey SSE chat**. They
 
 | Plane | Reference | Official source | If missing |
 | --- | --- | --- | --- |
-| Gateway `sk-` | `ADP_API_KEY` | Model-gateway API key (undocumented; see [docs/credentials.md](docs/credentials.md)) | LLM / search / plugin **calls** fail with `MISSING_CREDENTIAL` |
+| Tool Key | `ADP_API_KEY` | Create a Tool Key in the upper section of the site’s **Key Management** page | LLM / search / plugin **calls** fail with `MISSING_CREDENTIAL` |
 | SecretId / SecretKey | `ADP_SECRET_ID` / `ADP_SECRET_KEY` | Public cloud: [CAM API keys](https://cloud.tencent.com/document/product/598/40488). Independent site: ADP console **Key Management** | Model / plugin / app **catalogs** stay empty |
 | Per-app AppKey | e.g. `ADP_APP_KEY_DEMO` | [App publish → API management](https://cloud.tencent.com/document/product/1759/104209) or app **Invoke** ([SSE](https://cloud.tencent.com/document/product/1759/105561)) | The matching ask tool is not registered |
 
@@ -63,9 +60,12 @@ Both sites complete against `https://api.adp.cloud.tencent.com/chat/completions`
 
 That pair signs control-plane calls (`DescribeModelList`, `DescribeSpaceList`, marketplace). It is not `ADP_API_KEY`.
 
-### 3. Get the gateway `sk-` (`ADP_API_KEY`)
+### 3. Get the Tool Key (`ADP_API_KEY`)
 
-Create or copy an API key that authenticates `POST https://api.adp.cloud.tencent.com/chat/completions` (usually starts with `sk-`). Use this for Hunyuan / DeepSeek completions, Hunyuan search, and API/MCP plugin HTTP. Independent-site console AKSK cannot replace it.
+- **Independent site**: open [Key Management](https://adp.tencent.com/adp#/key-manage) and create a Tool Key in the upper section.
+- **Public cloud**: open [Key Management](https://adp.cloud.tencent.com/adp#/key-manage) and click **Create Tool Key** in the upper section.
+
+The Tool Key is used for Hunyuan / DeepSeek completions, Hunyuan search, and API/MCP plugin calls.
 
 ### 4. Optional: AppKey
 
@@ -79,11 +79,9 @@ Needed only for `adp_ask` / `adp_ask_<slug>` (SSE to a published app), not for p
 1. Run `dsh web` on loopback (`127.0.0.1`). Credential writes are loopback-only.
 2. Settings → Plugins → **Tencent Cloud ADP**.
 3. Choose **Independent site** or **Public cloud**.
-4. Paste SecretId / SecretKey (and the gateway `sk-`). Save. Values go through `credentials.set` into `$DSH_HOME/.credentials.yaml`.
+4. Paste the Tool Key, SecretId, and SecretKey. Save. Values go through `credentials.set` into `$DSH_HOME/.credentials.yaml`.
 5. After AKSK is stored, the card lists workspaces from `DescribeSpaceList`. Pick one. Public-cloud app and plugin calls need a real **SpaceId**; the patch default `default_space` is not a workspace on most accounts (control-plane `4510004`). If the list is empty, paste a SpaceId from the ADP console ([workspaces](https://cloud.tencent.com/document/product/1759/122576)).
 6. Paste AppKey if you will use ask tools. Save again.
-
-OneID on the card opens the ADP console in a new tab. It does **not** write any credentials.
 
 A Claw-style “build the app entirely via API” walkthrough (CreateSpace → CreateApp → CreateAgent → CreateRelease → chat) is [133869](https://cloud.tencent.com/document/product/1759/133869). That path is AppKey SSE, not this plugin’s gateway adapter.
 

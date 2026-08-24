@@ -11,9 +11,10 @@ No Tencent credentials. HTTP is mocked at the process boundary (`tests/mock/http
 ### P0
 
 - [ ] `sim-sign` — TC3 canonical string differs after host/vendor switch (fixed payload)
-- [ ] `sim-cred-missing` — no `sk-`: route remains, call is `MISSING_CREDENTIAL`
+- [ ] `sim-cred-missing` — no Tool Key: route remains, call is `MISSING_CREDENTIAL`
 - [ ] `sim-cred-bad` — `INVALID_CREDENTIAL`; key not in the error
-- [ ] `sim-llm-sse` — usage before finish; tool-call `arguments` is a JSON string
+- [ ] `sim-llm-sse` — usage before finish; tool-call `arguments` is a JSON string; name survives
+- [ ] `llm-loop` — serialize never sends null content; reasoning_content on tool-call turns; empty SSE id/name does not wipe identity
 - [ ] `sim-web-sse` — last-frame `Answer`; `presentResult` is `card: 'web', kind: 'search'`
 - [ ] `sim-plugin-list` — `PageNumber` starts at 0; second page kept
 - [ ] `sim-plugin-filter` — list `AllowExternalAccess=false` but detail URL kept; no URL / empty header dropped
@@ -35,6 +36,9 @@ No Tencent credentials. HTTP is mocked at the process boundary (`tests/mock/http
 - [ ] `sim-provision` — CreateApp → Agent → CreateRelease `ReleaseId` → DescribeReleaseSummary `{ AppId, ReleaseId }`; then FieldMask secret
 - [ ] `sim-spaceid-scope` — cloud AKSK fills SpaceId on lists, not DescribeApp / DescribeAgentSummaryList
 - [ ] `sim-adp-call-json-string` — stringified `payload` is parsed, not dropped as `{}`
+- [ ] `sim-adp-call-contract` — `adp_list_actions` ships required/hint; missing ModelScene and ChatCompletions fail locally; GetAppSecret remaps AppId→AppBizId
+- [ ] `sim-ask-name` — CJK provision name registers `adp_ask_claw-demo` (the advertised slug)
+- [ ] `sim-release-already` — CreateRelease 450027 returns DescribeLatestRelease instead of an error
 - [ ] `sim-appkey-mask` — without FieldMask `SecretInfo` empty; with it, AppKey
 - [ ] `sim-appkey-absent` — failure text is “cannot get AppKey”; no fake ask tool
 - [ ] `sim-ask-sse` — interleaved thought+reply; model sees reply only
@@ -63,7 +67,7 @@ Live checks (manual or `test:live`):
 - [ ] one API plugin and one MCP plugin; cancel stops the call
 - [ ] generation tools return `saved_files` on disk
 - [ ] no AKSK: model and search still work
-- [ ] no `sk-`: catalog may load, calls are `MISSING_CREDENTIAL`
+- [ ] no Tool Key: catalog may load, calls are `MISSING_CREDENTIAL`
 - [ ] unload the plugin row → tools / SkillProvider / MCP sessions gone
 - [ ] `skills-adp` lists plaza entries (`DescribeSkillSummaryList` without Perspective)
 - [ ] `control-adp` `adp_list_actions` + read `adp_call`; mutating stays gated

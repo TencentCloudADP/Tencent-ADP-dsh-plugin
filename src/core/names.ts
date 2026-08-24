@@ -17,9 +17,26 @@ export function pluginToolName(toolName: string, toolId: string, suffix = ''): s
   return base.slice(0, 60)
 }
 
+/**
+ * Stable ask-tool slug. Prefer kebab of remaining ASCII so CJK display names
+ * ("Claw Demo 应用") become `adp_ask_claw-demo`, matching what provision
+ * advertises. slugAscii used to return '' on any non-ASCII and fall back to a
+ * hash, so the registered tool never matched the advertised name.
+ */
+export function askSlug(name: string): string {
+  const fromKebab = kebab(name)
+  if (fromKebab) return fromKebab.slice(0, 50)
+  const ascii = slugAscii(name)
+  if (ascii) return ascii.slice(0, 50)
+  return `a${shortHash(name)}`
+}
+
 export function agentToolName(name: string): string {
-  const base = slugAscii(name) || `a${shortHash(name)}`
-  return `adp_ask_${base}`.slice(0, 60)
+  return `adp_ask_${askSlug(name)}`.slice(0, 60)
+}
+
+export function appKeyRefForSlug(slug: string): string {
+  return `ADP_APP_KEY_${slug.replace(/-/g, '_').toUpperCase()}`.replace(/[^A-Z0-9_]/g, '_')
 }
 
 export function skillKebab(name: string, id: string): string {

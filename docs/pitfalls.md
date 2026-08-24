@@ -4,9 +4,9 @@ Ported from adpworker `CONTRIBUTING-ADP.md` and `docs/ADP-接口盘点与需求.
 
 ## Install
 
-- `dsh plugin add` records the **package.json name** (`@tencent/dsh-adp`), not the folder name, and injects `cordis.patch.yml` as one profile bundle layer. Do not also pass `--patch ./cordis.patch.yml`, and do not copy those rows into the profile's `cordis.patch.yml` — either duplicates loader id `adp-core` and `dsh web` fails.
+- `dsh plugin add` records the **package.json name** (`@tencentcloudadp/dsh-adp`), not the folder name, and injects `cordis.patch.yml` as one profile bundle layer. Do not also pass `--patch ./cordis.patch.yml`, and do not copy those rows into the profile's `cordis.patch.yml` — either duplicates loader id `adp-core` and `dsh web` fails.
 - If this checkout was already linked under another name (the folder alias `adp-dsh-plugin` is the usual leftover), remove the old name, then add once: `dsh plugin --profile web remove adp-dsh-plugin`.
-- `~/.dsh/profiles/web/package.json` must list `@tencent/dsh-adp` once under both `dependencies` and `dsh.profile.bundles`. A profile `cordis.patch.yml` row that still says `name: adp-dsh-plugin` (even under a leftover id such as `mcp-tencent-cloud-docs`) is not this bundle — delete it; it re-registers `ctx.adp`.
+- `~/.dsh/profiles/web/package.json` must list `@tencentcloudadp/dsh-adp` once under both `dependencies` and `dsh.profile.bundles`. A profile `cordis.patch.yml` row that still says `name: adp-dsh-plugin` (even under a leftover id such as `mcp-tencent-cloud-docs`) is not this bundle — delete it; it re-registers `ctx.adp`.
 - Git installs fetch source and run `prepare` (tsdown). pnpm ≥10 blocks that until the package is listed under `allowBuilds` in the profile's `pnpm-workspace.yaml`. A `pnpm pack` tarball is already compiled and does not need that allowance.
 - After editing this checkout, run `pnpm run prepare` (or `pnpm test`) and restart `dsh web`; the profile link loads `lib/`, not `src/`.
 
@@ -38,7 +38,7 @@ Ported from adpworker `CONTRIBUTING-ADP.md` and `docs/ADP-接口盘点与需求.
 
 14. **`adp-core` is a function plugin (`name` / `inject` / `apply`), same as `llm-adp`.** A class default export is eaten by the loader. Sim: `sim-export`.
 
-15. **独立站 / 公有云 switches control + SSE, not the model gateway.** Completions stay on `api.adp.cloud.tencent.com` and still need a gateway `sk-`. Independent-site console SecretId/SecretKey is not `ADP_API_KEY`. Sim: `adp site proxy`.
+15. **独立站 / 公有云 switches control + SSE, not the model gateway.** Completions stay on `api.adp.cloud.tencent.com` and use the site's Tool Key (`ADP_API_KEY`). SecretId/SecretKey is a separate credential pair. Sim: `adp site proxy`.
 
 16. **Site settings wait for `adp`, not only `settings`.** `ctx.inject(['settings'])` can run before `AdpService` provides `adp`. Then `registerSiteSettings` no-ops, `settings.update('adp-core')` throws, and `dsh-host-webserver` answers POST `/adp/site` with an empty 400. Inject `['settings', 'adp']`. Sim: `sim-site-settings`.
 
@@ -60,4 +60,10 @@ Ported from adpworker `CONTRIBUTING-ADP.md` and `docs/ADP-接口盘点与需求.
 
 25. **App lists paginate with `PageNumber` / `PageSize`, 0-based.** `Offset` / `Limit` are ignored. `TotalCount` of hundreds with 15 rows means the first page only. Same for `DescribePluginSummaryList` (pitfall 5). `DescribeAgentSummaryList` is AppId-scoped and rejects `SpaceId`.
 
-26. **DSH ≥ 0.1.0-rc.7 keys `settings.plugin.item` on the settings namespace.** Passing only `id` (the rc.6 list-slot shape) throws `keyed slot "settings.plugin.item" requires options.key` and the Web UI fails the whole plugin. Register `key: 'adp-core'` (same string as `ADP_SITE_SETTINGS_NS`). Keep `id: 'adp-core'` so rc.6 list slots still accept the card. Sim: `sim-plugin-item-slot-key`.
+27. **`adp_ask_<slug>` must use the same slug provision advertises.** `kebab("Claw Demo 应用")` is `claw-demo`, but `slugAscii` used to return `''` on any CJK character and `agentToolName` hashed, so provision told the model to call `adp_ask_claw-demo` while `registerAskTool` registered `adp_ask_a…`. The executor then returned `unknown tool "adp_ask_claw-demo"`. Both sides now use `agentToolName` / `askSlug`. The provision result also returns `ask: { tool: "adp_ask", appKeyEnv }` because DSH snapshots the tool list for the current turn. Sim: `sim-ask-name`, `tests/unit/llm-loop.test.ts`.
+
+28. **Agent-loop wire format follows `llm-deepseek`, not a looser OpenAI subset.** ADP's gateway hosts Hunyuan, DeepSeek V4, GLM, Kimi, MiniMax. Tool-call turns must send `content: ""` (never `null`), pass back `reasoning_content` when thinking ran, keep user text plus `role: tool` results, and never let continuation SSE deltas with `id`/`name` `""` or `null` wipe the first identity (community `unknown tool ""` on DSH 0.1.0-rc.7). Object-shaped `function.arguments` is JSON.stringified. Sim: `tests/unit/llm-loop.test.ts`, `sim-llm-sse`.
+
+29. **`adp_call` needs a per-action contract.** Raw OpenAPI passthrough made the model guess: `DescribeModelList` without `ModelScene`, `DescribeAgentDetail` without `AppId`, `CreateRelease` with `AgentId`, `GetAppSecret.AppId` instead of `AppBizId`, top-level `ModifyAgent.SkillList`, `ChatCompletions` as a control action (`InvalidAction`). `adp_list_actions` now ships `required` / `hint` / `example`; `adp_call` remaps/nests/drops known mistakes and refuses dead actions before the signed request. CreateRelease `450027` is recovered via `DescribeLatestRelease`. Sim: `sim-adp-call-contract`, `sim-release-already`.
+
+30. **`DescribeSkillCategoryList` rejects `SpaceId`.** Cloud AKSK auto-inject must not add it (same class as AppId-scoped actions). Sim: `sim-spaceid-scope`.

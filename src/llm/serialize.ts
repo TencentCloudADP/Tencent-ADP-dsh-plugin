@@ -1,48 +1,81 @@
+/**
+ * Serialize harness messages into ADP's OpenAI-shaped gateway.
+ * Matches `@deepseek-ai/dsh-llm-deepseek` wire rules so Hunyuan / DeepSeek /
+ * Kimi / GLM on the same host all survive a multi-step tool loop.
+ */
 import type { ContentBlock, GenerateOptions, Message, ToolSchema } from '@deepseek-ai/dsh-llm'
 import { LlmError } from '@deepseek-ai/dsh-llm'
 
-function textOf(blocks: ContentBlock[]): string {
+function flattenText(blocks: ContentBlock[]): string {
   return blocks.filter((b) => b.type === 'text').map((b) => (b as { text: string }).text).join('')
 }
 
-export function serializeMessages(options: GenerateOptions): unknown[] {
-  const out: unknown[] = []
-  if (options.system) out.push({ role: 'system', content: options.system })
-  for (const message of options.messages) {
-    out.push(...serializeMessage(message))
-  }
-  return out
+function flattenReasoning(blocks: ContentBlock[]): string {
+  return blocks.filter((b) => b.type === 'reasoning').map((b) => (b as { text: string }).text).join('')
 }
 
-function serializeMessage(message: Message): unknown[] {
-  const toolResults = message.content.filter((b) => b.type === 'tool-result')
-  if (toolResults.length > 0) {
-    return toolResults.map((b) => {
-      const block = b as { type: 'tool-result'; toolCallId: string; content: ContentBlock[]; isError?: boolean }
+/** Serialize one assistant message (text + reasoning + tool calls). */
+function serializeAssistant(message: Message): Record<string, unknown> {
+  const text = flattenText(message.content)
+  const reasoning = flattenReasoning(message.content)
+  const toolCalls = message.content
+    .filter((b) => b.type === 'tool-call')
+    .map((b) => {
+      const call = b as { type: 'tool-call'; id: string; name: string; arguments: string }
       return {
-        role: 'tool',
-        tool_call_id: block.toolCallId,
-        content: textOf(block.content) || (block.isError ? 'error' : ''),
+        id: call.id,
+        type: 'function' as const,
+        function: { name: call.name, arguments: call.arguments },
       }
     })
+
+  return {
+    role: 'assistant',
+    // Text-less turns send "" — NEVER null. Pure tool-call turns: official
+    // samples replay message.content as "" and some gateways (DeepSeek V4,
+    // Kimi) reject null outright. A null here also bricks later turns of the
+    // same session once it sits in history.
+    content: text,
+    // Thinking-mode passback: reasoning_content must return on tool-call
+    // turns. Plain turns drop it to save tokens.
+    ...toolCalls.length > 0 && reasoning.length > 0 ? { reasoning_content: reasoning } : {},
+    ...toolCalls.length > 0 ? { tool_calls: toolCalls } : {},
   }
-  const toolCalls = message.content.filter((b) => b.type === 'tool-call')
-  if (message.role === 'assistant' && toolCalls.length > 0) {
-    return [{
-      role: 'assistant',
-      content: textOf(message.content) || null,
-      tool_calls: toolCalls.map((b) => {
-        const call = b as { type: 'tool-call'; id: string; name: string; arguments: string }
-        return {
-          id: call.id,
-          type: 'function',
-          function: { name: call.name, arguments: call.arguments },
-        }
-      }),
-    }]
+}
+
+/**
+ * Serialize the conversation. `tool-result` blocks become standalone
+ * `{role: 'tool'}` messages. A mixed user message contributes its text first
+ * and its tool results as separate wire messages after — dropping the text
+ * used to hide the model's own commentary from the next gateway request.
+ */
+export function serializeMessages(options: GenerateOptions): unknown[] {
+  const wire: unknown[] = []
+  if (options.system) wire.push({ role: 'system', content: options.system })
+  for (const message of options.messages) {
+    if (message.role === 'system') {
+      wire.push({ role: 'system', content: flattenText(message.content) })
+      continue
+    }
+    if (message.role === 'assistant') {
+      wire.push(serializeAssistant(message))
+      continue
+    }
+    const toolResults = message.content.filter((b) => b.type === 'tool-result')
+    const text = flattenText(message.content)
+    if (text.length > 0 || toolResults.length === 0) {
+      wire.push({ role: 'user', content: text })
+    }
+    for (const result of toolResults) {
+      const block = result as { type: 'tool-result'; toolCallId: string; content: ContentBlock[]; isError?: boolean }
+      wire.push({
+        role: 'tool',
+        tool_call_id: block.toolCallId,
+        content: flattenText(block.content) || (block.isError ? 'error' : '(no output)'),
+      })
+    }
   }
-  const role = message.role === 'system' ? 'system' : message.role === 'assistant' ? 'assistant' : 'user'
-  return [{ role, content: textOf(message.content) }]
+  return wire
 }
 
 export function serializeTools(tools: ToolSchema[] | undefined): unknown[] | undefined {

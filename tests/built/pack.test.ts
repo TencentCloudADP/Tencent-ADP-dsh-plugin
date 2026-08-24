@@ -52,7 +52,7 @@ describe('sim-pack', () => {
         client?: { platform?: string; inject?: string[] }
       }
     }
-    expect(manifest.name).toBe('@tencent/dsh-adp')
+    expect(manifest.name).toBe('@tencentcloudadp/dsh-adp')
     expect(manifest.dsh?.bundle?.patch).toBe('./cordis.patch.yml')
     expect(existsSync(resolve('cordis.patch.yml'))).toBe(true)
     expect(manifest.dsh?.client?.platform).toBe('web')
@@ -69,7 +69,7 @@ describe('sim-pack', () => {
     expect(existsSync(client)).toBe(true)
     const source = readFileSync(client, 'utf8')
     expect(source.startsWith('window.__ModuleLoader__.load')).toBe(true)
-    expect(source).toContain('id: "@tencent/dsh-adp"')
+    expect(source).toContain('id: "@tencentcloudadp/dsh-adp"')
     expect(source).toContain('settings.plugins.adp')
     expect(source).toContain('"locale"')
     expect(source).toContain('/adp/site')

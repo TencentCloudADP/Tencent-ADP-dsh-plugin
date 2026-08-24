@@ -43,7 +43,7 @@ export function apply(ctx: Context, config: Config): void {
   ctx.tools.register(defineTool({
     name: 'adp_provision_agent',
     description:
-      'Create a Tencent Cloud ADP application + agent + release from one request (CreateApp → CreateAgent → CreateRelease). Default AppMode=4 (Claw). Does not become a DSH subagent: the cloud agent cannot call local tools. On success stores the AppKey as a credential reference and registers adp_ask_<slug>. Release polling happens here so the model does not sleep.',
+      'Create a Tencent Cloud ADP application + agent + release from one request (CreateApp → CreateAgent → CreateRelease). Default AppMode=4 (Claw). Does not become a DSH subagent: the cloud agent cannot call local tools. On success stores the AppKey as a credential reference and registers adp_ask_<slug> under the SAME name returned in askTool. If that slug is not yet in this turn\'s tool list, call adp_ask with appKeyEnv from the result (ask.appKeyEnv) — do not invent a tool name.',
     parameters: {
       name: { type: 'string', required: true, description: 'Application / agent display name.' },
       instructions: { type: 'string', required: true, description: 'Agent instructions.' },
@@ -63,6 +63,14 @@ export function apply(ctx: Context, config: Config): void {
           agentId: { type: 'string', required: true },
           askTool: { type: 'string' },
           appKeyRef: { type: 'string' },
+          ask: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              tool: { type: 'string', required: true },
+              appKeyEnv: { type: 'string', required: true },
+            },
+          },
           message: { type: 'string' },
         },
       },
@@ -92,7 +100,7 @@ export function apply(ctx: Context, config: Config): void {
   ctx.tools.register(defineTool({
     name: 'adp_ask',
     description:
-      'Ask a bound ADP cloud application over SSE chat. Requires AppKey (not AKSK). Only reply text is returned; thought/tool_call traces are omitted from the answer. Optional conversationId continues a thread. This is one-way ask, not a DSH subagent.',
+      'Ask a bound ADP cloud application over SSE chat. Requires AppKey (not AKSK). Use this after adp_provision_agent by passing appKeyEnv from the result — that path works even when adp_ask_<slug> is not in the current turn\'s tool list. Only reply text is returned; thought/tool_call traces are omitted from the answer. Optional conversationId continues a thread. This is one-way ask, not a DSH subagent.',
     parameters: {
       question: { type: 'string', required: true },
       appKeyEnv: { type: 'string', description: 'Credential reference for the AppKey when not using a bound adp_ask_* tool.' },

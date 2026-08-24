@@ -84,6 +84,15 @@ export async function siteView(service: AdpService): Promise<SiteView> {
   }
 }
 
+function localSiteView(service: AdpService): SiteView {
+  return {
+    ok: true,
+    vendor: siteVendorFromConfig(service.vendor()),
+    spaceId: service.spaceId(),
+    spaces: [],
+  }
+}
+
 export async function applySiteSettings(
   ctx: Context,
   patch: { vendor?: SiteVendor; spaceId?: string },
@@ -146,7 +155,9 @@ export async function handleSite(req: IncomingMessage, res: ServerResponse, ctx:
       sendJson(res, 500, { ok: false, error: error instanceof Error ? error.message : String(error) })
       return
     }
-    sendJson(res, 200, await siteView(service))
+    // Persisting the selection is local. Do not make the POST wait for the
+    // remote DescribeSpaceList call; the client refreshes spaces in the background.
+    sendJson(res, 200, localSiteView(service))
     return
   }
   res.setHeader('allow', 'GET, POST')

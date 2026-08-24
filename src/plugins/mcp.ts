@@ -67,7 +67,7 @@ export class McpSession {
     const result = await this.rpc('initialize', {
       protocolVersion: '2024-11-05',
       capabilities: {},
-      clientInfo: { name: '@tencent/dsh-adp', version: '0.1.0' },
+      clientInfo: { name: '@tencentcloudadp/dsh-adp', version: '0.1.0' },
     }, signal)
     void result
     try {

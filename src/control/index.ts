@@ -2,8 +2,16 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { JsonValue } from '@deepseek-ai/dsh-tools'
-import { APP_AGENT_RELEASE_MUTATING, CATALOG, MUTATING, NEVER_WHITELIST, catalogList } from '../core/catalog.ts'
+import { APP_AGENT_RELEASE_MUTATING, CATALOG, MUTATING, NEVER_WHITELIST } from '../core/catalog.ts'
 import { AdpError } from '../core/errors.ts'
+import {
+  ACTION_CONTRACTS,
+  DEAD_ACTIONS,
+  catalogRows,
+  contractHint,
+  missingRequired,
+  normalizeCallPayload,
+} from './contracts.ts'
 
 export const name = 'control-adp'
 export const inject = ['tools', 'adp']
@@ -37,7 +45,8 @@ export function apply(ctx: Context, config: Config): void {
 
   ctx.tools.register(defineTool({
     name: 'adp_list_actions',
-    description: 'List ADP control-plane actions this plugin can call, with API version and whether they mutate state.',
+    description:
+      'List ADP control-plane actions this plugin can call. Read required/hint/example before adp_call. Prefer adp_provision_agent / adp_ask / adp_plugin_* over raw CreateApp/CreateAgent/CreateRelease/ChatCompletions.',
     parameters: {},
     output: {
       schema: {
@@ -56,6 +65,10 @@ export function apply(ctx: Context, config: Config): void {
                 mutating: { type: 'boolean', required: true },
                 allowed: { type: 'boolean', required: true },
                 autoFilled: { type: 'array', items: { type: 'string' } },
+                required: { type: 'array', items: { type: 'string' } },
+                hint: { type: 'string' },
+                example: { type: 'json' },
+                dead: { type: 'boolean' },
               },
             },
           },
@@ -65,9 +78,9 @@ export function apply(ctx: Context, config: Config): void {
     },
     execute() {
       return Promise.resolve({
-        actions: catalogList().map((row) => ({
+        actions: catalogRows().map((row) => ({
           ...row,
-          allowed: !row.mutating || allow.has(row.action),
+          allowed: !row.dead && (!row.mutating || allow.has(row.action)),
         })),
       })
     },
@@ -76,7 +89,7 @@ export function apply(ctx: Context, config: Config): void {
   ctx.tools.register(defineTool({
     name: 'adp_call',
     description:
-      'Call one ADP control-plane action by name. Mutating actions (Create/Modify/Delete App+Agent+Release, etc.) require approval and must appear on allowMutating. CreateSkill and DeletePlugin are never allowed. Unknown parameters surface as ADP\'s own error.',
+      'Call one ADP control-plane action by name. Pass payload as a JSON object (a JSON string is also accepted). Check adp_list_actions for required fields and hints — missing ModelScene / AppId, top-level SkillList on ModifyAgent, AgentId on CreateRelease, and ChatCompletions all fail at the API. Mutating actions need approval and allowMutating. Prefer adp_provision_agent to create+publish and adp_ask to talk to a published app.',
     parameters: {
       action: { type: 'string', required: true, description: 'Catalog action name, e.g. DescribeApp.' },
       payload: {
@@ -92,14 +105,27 @@ export function apply(ctx: Context, config: Config): void {
       if (!CATALOG[args.action]) {
         throw new AdpError(`Unknown action ${args.action}. Call adp_list_actions.`, 'UNKNOWN_ACTION')
       }
-      if (NEVER_WHITELIST.has(args.action)) {
-        throw new AdpError(`${args.action} is not exposed.`, 'DENIED')
+      if (NEVER_WHITELIST.has(args.action) || DEAD_ACTIONS.has(args.action)) {
+        throw new AdpError(
+          ACTION_CONTRACTS[args.action]?.hint
+            ?? `${args.action} is not exposed.`,
+          'DENIED',
+        )
       }
       if (MUTATING.has(args.action) && !allow.has(args.action)) {
         throw new AdpError(`${args.action} is mutating and not on allowMutating.`, 'DENIED')
       }
-      const payload = asCallPayload(args.payload)
-      return ctx.adp.call(args.action, payload, exec.signal) as Promise<JsonValue>
+      const payload = normalizeCallPayload(args.action, asCallPayload(args.payload))
+      const missing = missingRequired(args.action, payload)
+      if (missing.length) {
+        const hint = contractHint(args.action)
+        const example = ACTION_CONTRACTS[args.action]?.example
+        throw new AdpError(
+          `${args.action} is missing ${missing.map((k) => `\`${k}\``).join(', ')}.${hint ? ` ${hint}` : ''}${example !== undefined ? ` Example: ${JSON.stringify(example)}` : ''}`,
+          'BAD_PAYLOAD',
+        )
+      }
+      return await callControlAction(ctx.adp, args.action, payload, exec.signal) as JsonValue
     },
   }))
 }
@@ -119,3 +145,37 @@ export function asCallPayload(raw: unknown): Record<string, unknown> {
   if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>
   throw new AdpError('adp_call payload must be a JSON object.', 'BAD_PAYLOAD')
 }
+
+function isAlreadyPublished(action: string, error: unknown): boolean {
+  if (action !== 'CreateRelease' || !(error instanceof Error)) return false
+  return error.message.includes('450027')
+}
+
+export async function callControlAction(
+  adp: { call(action: string, payload?: Record<string, unknown>, signal?: AbortSignal): Promise<Record<string, unknown>> },
+  action: string,
+  payload: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<Record<string, unknown>> {
+  try {
+    return await adp.call(action, payload, signal)
+  } catch (error) {
+    if (isAlreadyPublished(action, error) && typeof payload.AppId === 'string' && payload.AppId) {
+      const latest = await adp.call('DescribeLatestRelease', { AppId: payload.AppId }, signal)
+      return {
+        alreadyPublished: true,
+        message: 'CreateRelease 450027: nothing new to publish. Returning DescribeLatestRelease.',
+        ...latest,
+      }
+    }
+    throw error
+  }
+}
+
+export {
+  ACTION_CONTRACTS,
+  DEAD_ACTIONS,
+  catalogRows,
+  nestAgentFields,
+  normalizeCallPayload,
+} from './contracts.ts'

@@ -14,3 +14,4 @@ credentials.yaml
 *.pem
 *.log
 .pnpm-store/
+.workspace/

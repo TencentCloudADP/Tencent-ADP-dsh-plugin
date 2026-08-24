@@ -40,7 +40,7 @@ export function landingHost(apiHost: string = ACCOUNT_HOST): string {
 
 /**
  * POST `/account/login-url` and unwrap the authorize URL.
- * Does not exchange the session for AKSK / `sk-` / AppKey — ADP has no such API.
+ * Does not exchange the session for AKSK / Tool Key / AppKey — ADP has no such API.
  */
 export async function fetchLoginUrl(options: { host?: string } = {}): Promise<LoginUrlResult> {
   const host = normalizeHost(options.host ?? ACCOUNT_HOST)

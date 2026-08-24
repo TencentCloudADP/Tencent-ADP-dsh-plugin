@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from 
 import { Button, IconChevronDownOutline14, Input, StateDot } from '@deepseek-ai/dsh-client-ui-primitives'
 import { AdpIcon } from './AdpIcon.tsx'
 import { t as catalogT, type AdpLocaleKey, type Translate } from './locales.ts'
-import { fetchLoginUrlProxy } from './loginUrl.ts'
 import { fetchSiteVendor, saveSiteSettings, type SiteSpace, type SiteVendor } from './site.ts'
 
 const STYLE_ID = 'adp-dsh-credentials-card'
@@ -31,10 +30,6 @@ const CSS = `
 .adp-dsh-badges{align-items:center;gap:8px;display:inline-flex}
 .adp-dsh-badge{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px;display:inline-flex;align-items:center;gap:6px}
 .adp-dsh-footer{border-top:1px solid var(--dsw-alias-border-l2);justify-content:flex-end;align-items:center;gap:8px;padding:12px 0 4px;display:flex}
-.adp-dsh-oneid{display:flex;flex-direction:column;gap:8px}
-.adp-dsh-oneidAnchor{align-self:flex-start;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);background:transparent;border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;line-height:1.4;cursor:pointer}
-.adp-dsh-oneidAnchor:hover{border-color:var(--dsw-alias-label-dimmed)}
-.adp-dsh-oneidAnchor:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .adp-dsh-site{display:flex;flex-direction:column;gap:8px}
 .adp-dsh-siteRow{display:flex;gap:8px}
 .adp-dsh-siteBtn{appearance:none;font:inherit;cursor:pointer;flex:1;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-primary);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4}
@@ -59,7 +54,7 @@ function ensureStyles(): void {
   if (typeof document === 'undefined') return
   if (document.querySelector(`style[data-plugin-css=${JSON.stringify(STYLE_ID)}]`)) return
   const tag = document.createElement('style')
-  tag.dataset.plugin = '@tencent/dsh-adp'
+  tag.dataset.plugin = '@tencentcloudadp/dsh-adp'
   tag.dataset.pluginCss = STYLE_ID
   tag.textContent = CSS
   document.head.appendChild(tag)
@@ -103,8 +98,10 @@ const FIELDS: Array<{
   {
     ref: 'ADP_API_KEY',
     hintKey: 'hintApiKey',
-    helpKeys: { standalone: 'helpApiKey', cloud: 'helpApiKey' },
-    helpUrl: () => 'https://console.cloud.tencent.com/lkeap/api',
+    helpKeys: { standalone: 'helpApiKeyStandalone', cloud: 'helpApiKeyCloud' },
+    helpUrl: (vendor) => vendor === 'ChinaTencentADP'
+      ? 'https://adp.tencent.com/adp#/key-manage'
+      : 'https://adp.cloud.tencent.com/adp#/key-manage',
   },
   {
     ref: 'ADP_SECRET_ID',
@@ -225,16 +222,14 @@ export function AdpCredentialsCard({
   const [views, setViews] = useState<Record<CredRef, CredentialView>>(EMPTY_VIEWS)
   const [drafts, setDrafts] = useState<Record<CredRef, string>>(emptyDrafts)
   const [saving, setSaving] = useState(false)
-  const [loginBusy, setLoginBusy] = useState(false)
-  const [loginUrl, setLoginUrl] = useState<string | undefined>()
   const [error, setError] = useState<string | undefined>()
-  const [loginError, setLoginError] = useState<string | undefined>()
   const [vendor, setVendor] = useState<SiteVendor>('ChinaTencentADP')
   const [spaceId, setSpaceId] = useState('default_space')
   const [spaces, setSpaces] = useState<SiteSpace[]>([])
   const [spaceDraft, setSpaceDraft] = useState('')
   const [siteBusy, setSiteBusy] = useState(false)
   const [siteError, setSiteError] = useState<string | undefined>()
+  const siteRequestRef = useRef(0)
 
   useEffect(() => {
     ensureStyles()
@@ -272,17 +267,6 @@ export function AdpCredentialsCard({
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    setLoginBusy(true)
-    void fetchLoginUrlProxy().then((data) => {
-      if (cancelled) return
-      setLoginBusy(false)
-      if (data.ok) {
-        setLoginUrl(data.login_url)
-        setLoginError(undefined)
-        return
-      }
-      setLoginError(data.error)
-    })
     void fetchSiteVendor().then((data) => {
       if (cancelled) return
       if (data.ok) {
@@ -334,6 +318,14 @@ export function AdpCredentialsCard({
     setError(undefined)
   }
 
+  function refreshSpaces(expectedVendor: SiteVendor): void {
+    void fetchSiteVendor().then((fresh) => {
+      if (!fresh.ok || fresh.vendor !== expectedVendor) return
+      setSpaceId(fresh.spaceId)
+      setSpaces(fresh.spaces)
+    })
+  }
+
   async function onClear(ref: CredRef): Promise<void> {
     const api = connection?.api.credentials
     if (!api || !loopback || !views[ref].writable) return
@@ -352,30 +344,34 @@ export function AdpCredentialsCard({
   }
 
   async function onSite(next: SiteVendor): Promise<void> {
-    if (next === vendor || siteBusy) return
-    setSiteBusy(true)
+    if (next === vendor) return
+    const requestId = ++siteRequestRef.current
+    const previousVendor = vendor
+    const previousSpaceId = spaceId
+    const previousSpaces = spaces
+    setVendor(next)
+    setSpaces([])
     setSiteError(undefined)
     try {
       const data = await saveSiteSettings({ vendor: next })
+      if (requestId !== siteRequestRef.current) return
       if (!data.ok) {
+        setVendor(previousVendor)
+        setSpaceId(previousSpaceId)
+        setSpaces(previousSpaces)
         setSiteError(data.error)
         return
       }
       setVendor(data.vendor)
       setSpaceId(data.spaceId)
       setSpaces(data.spaces)
-      setLoginUrl(undefined)
-      const login = await fetchLoginUrlProxy()
-      if (login.ok) {
-        setLoginUrl(login.login_url)
-        setLoginError(undefined)
-      } else {
-        setLoginError(login.error)
-      }
+      refreshSpaces(data.vendor)
     } catch (caught) {
+      if (requestId !== siteRequestRef.current) return
+      setVendor(previousVendor)
+      setSpaceId(previousSpaceId)
+      setSpaces(previousSpaces)
       setSiteError(caught instanceof Error ? caught.message : String(caught))
-    } finally {
-      setSiteBusy(false)
     }
   }
 
@@ -393,38 +389,11 @@ export function AdpCredentialsCard({
       setSpaceId(data.spaceId)
       setSpaces(data.spaces)
       setSpaceDraft('')
+      refreshSpaces(data.vendor)
     } catch (caught) {
       setSiteError(caught instanceof Error ? caught.message : String(caught))
     } finally {
       setSiteBusy(false)
-    }
-  }
-
-  async function onOneId(): Promise<void> {
-    setLoginError(undefined)
-    // Open in the click handler. `window.open` after `await fetch` is treated as a
-    // popup and blocked. Do not pass `noopener` in windowFeatures: that makes open()
-    // return null even when the tab opened, which falsely showed oneidPopupBlocked.
-    const tab = window.open('about:blank', '_blank')
-    if (!tab) {
-      setLoginError(t('oneidPopupBlocked'))
-      return
-    }
-    setLoginBusy(true)
-    try {
-      const data = await fetchLoginUrlProxy()
-      if (!data.ok) {
-        tab.close()
-        setLoginError(data.error)
-        return
-      }
-      setLoginUrl(data.login_url)
-      tab.location.replace(data.login_url)
-    } catch (caught) {
-      tab.close()
-      setLoginError(caught instanceof Error ? caught.message : String(caught))
-    } finally {
-      setLoginBusy(false)
     }
   }
 
@@ -456,7 +425,6 @@ export function AdpCredentialsCard({
                 type="button"
                 className={`adp-dsh-siteBtn${vendor === 'ChinaTencentADP' ? ' adp-dsh-siteBtnActive' : ''}`}
                 aria-pressed={vendor === 'ChinaTencentADP'}
-                disabled={siteBusy}
                 onClick={() => void onSite('ChinaTencentADP')}
               >
                 {t('siteStandalone')}
@@ -465,17 +433,11 @@ export function AdpCredentialsCard({
                 type="button"
                 className={`adp-dsh-siteBtn${vendor === 'ChinaTencentCloud' ? ' adp-dsh-siteBtnActive' : ''}`}
                 aria-pressed={vendor === 'ChinaTencentCloud'}
-                disabled={siteBusy}
                 onClick={() => void onSite('ChinaTencentCloud')}
               >
                 {t('siteCloud')}
               </button>
             </div>
-            <p className="adp-dsh-hint">
-              {siteBusy
-                ? t('siteSaving')
-                : t(vendor === 'ChinaTencentADP' ? 'siteHintStandalone' : 'siteHintCloud')}
-            </p>
             {siteError ? <p className="adp-dsh-error" role="status">{siteError}</p> : null}
           </div>
           <div className="adp-dsh-site">
@@ -519,29 +481,10 @@ export function AdpCredentialsCard({
               </div>
             )}
             <p className="adp-dsh-hint">
-              {siteBusy ? t('spaceSaving') : spaces.length > 0 ? t('spaceHint') : t('spaceEmpty')}
+              {spaces.length > 0 ? t('spaceHint') : t('spaceEmpty')}
             </p>
           </div>
-          <div className="adp-dsh-oneid">
-            <p className="adp-dsh-sectionTitle">{t('oneidTitle')}</p>
-            {loginUrl ? (
-              <a
-                className="adp-dsh-oneidAnchor"
-                href={loginUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t('oneidStart')}
-              </a>
-            ) : (
-              <Button type="button" variant="outline" size="sm" disabled={loginBusy} onClick={() => void onOneId()}>
-                {loginBusy ? t('oneidStarting') : t('oneidStart')}
-              </Button>
-            )}
-            {loginError ? <p className="adp-dsh-error" role="status">{loginError}</p> : null}
-          </div>
           <div>
-            <p className="adp-dsh-sectionTitle">{t('manualTitle')}</p>
             {!loopback ? (
               <p className="adp-dsh-hint" role="status">
                 {t('loopbackHint')}

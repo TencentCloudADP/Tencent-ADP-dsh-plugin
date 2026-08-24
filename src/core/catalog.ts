@@ -123,6 +123,10 @@ export const NO_AUTO_SPACE_ID = new Set<string>([
   'DescribeConversation',
   'DescribeConversationList',
   'DescribeConversationMessageList',
+  'DescribeSkillCategoryList',
+  'DescribeSkillDetail',
+  'CreateWebSocketToken',
+  'ChatCompletions',
 ])
 
 /** Never offered on the allowMutating whitelist. */

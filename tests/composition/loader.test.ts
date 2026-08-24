@@ -48,7 +48,7 @@ describe('bundle patch loader ids', () => {
   it('Loader rejects a composed insert list with duplicate adp-core', async () => {
     const ctx = new Context()
     await ctx.plugin(Loader)
-    const rows = ids.map((id) => ({ id, name: `@tencent/dsh-adp` }))
+    const rows = ids.map((id) => ({ id, name: `@tencentcloudadp/dsh-adp` }))
     await expect(ctx.loader.root.update([...rows, ...rows])).rejects.toThrow(/duplicate loader entry id: adp-core/)
   })
 })

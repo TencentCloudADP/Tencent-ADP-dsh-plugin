@@ -11,9 +11,9 @@ Console paths (CAM vs ADP 密钥管理, workspace, AppKey) are in the README [Co
 | 独立站 | `capi.adp.tencent.com` | `https://adp.tencent.com/adp/v2/chat` | ADP console key, ~26 chars, not `AKID` |
 | 公有云 | `adp.tencentcloudapi.com` | `https://wss.lke.cloud.tencent.com/adp/v2/chat` | CAM `AKID…` (36 chars) |
 
-Switching to 独立站 does not make that 26-character AKSK work as `ADP_API_KEY`. Completions still need a gateway key on `api.adp.cloud.tencent.com`. There is no `api.adp.tencent.com`. Official ADP docs ([133869](https://cloud.tencent.com/document/product/1759/133869)) do not describe this gateway; they document CAM AKSK plus AppKey SSE chat. On the unprefixed path, HTTP 401 `AuthenticationError` means the gateway key is invalid or expired; HTTP 401 `not_authorized` means the client posted `/v1/chat/completions`.
+`ADP_API_KEY` is a Tool Key, separate from the SecretId / SecretKey pair. Create it in the upper section of Key Management: [independent site](https://adp.tencent.com/adp#/key-manage) or [public cloud](https://adp.cloud.tencent.com/adp#/key-manage). Completions use it on `api.adp.cloud.tencent.com`; there is no `api.adp.tencent.com`. On the unprefixed path, HTTP 401 `AuthenticationError` means the Tool Key is invalid or expired; HTTP 401 `not_authorized` means the client posted `/v1/chat/completions`.
 
-## Gateway key
+## Tool Key
 
 - Env / credential-ref: `ADP_API_KEY` (`gatewayKeyEnv`)
 - Completions URL: `POST https://api.adp.cloud.tencent.com/chat/completions` (same as adpworker). `POST …/v1/chat/completions` is a different route and returns 401 `not_authorized` even for a valid key.
@@ -43,6 +43,6 @@ Switching to 独立站 does not make that 26-character AKSK work as `ADP_API_KEY
 - Fallback: LKE `GetAppSecret(AppBizId)`
 - If both are empty after a successful release, `adp_provision_agent` returns `kind: "needs_appkey"` and does **not** register a fake ask tool. Paste the console value into a credential-ref and bind `agents-adp.agents[].appKeyEnv`.
 
-AKSK cannot drive `/adp/v2/chat`. AppKey cannot sign the control plane. OneID session tokens unlock none of the three. The Settings → Plugins card can open OneID in a browser tab; it still cannot write `ADP_API_KEY` / AKSK / AppKey from that session. Paste keys on the card (or into `$DSH_HOME/.credentials.yaml`).
+AKSK cannot drive `/adp/v2/chat`. AppKey cannot sign the control plane. Paste keys on the card (or into `$DSH_HOME/.credentials.yaml`).
 
-Do not put AppKey, `sk-`, or SecretKey samples in docs or fixtures.
+Do not put AppKey, Tool Key, or SecretKey samples in docs or fixtures.

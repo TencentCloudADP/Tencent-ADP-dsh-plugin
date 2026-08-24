@@ -18,6 +18,7 @@ import { parseSiteBody } from '../../src/client/site.ts'
 import { presentAdpSearchResult } from '../../src/web/index.ts'
 import { assemble } from '../../src/agents/chat.ts'
 import { secretFromApp } from '../../src/agents/provision.ts'
+import { callControlAction } from '../../src/control/index.ts'
 import { isExternallyCallable, normalizePluginDetail } from '../../src/core/service.ts'
 import { normalizeModelList } from '../../src/core/models.ts'
 import { McpSession } from '../../src/plugins/mcp.ts'
@@ -166,6 +167,7 @@ describe('live HTTP sims', () => {
     const ended = chunks.find((c) => c.type === 'block-end' && c.block && 'arguments' in (c.block as object))
     expect(typeof (ended?.block as { arguments: string }).arguments).toBe('string')
     expect((ended?.block as { arguments: string }).arguments).toBe('{"query":"图片"}')
+    expect((ended?.block as { name: string }).name).toBe('adp_plugin_list')
   })
 
   it('sim-web-sse: last-frame Answer and web/search presentResult', async () => {
@@ -274,6 +276,13 @@ describe('live HTTP sims', () => {
     expect(agentBody.Name).toBeUndefined()
     expect(agentBody.Agent?.Profile?.Name).toBe('demo-bot')
     expect(agentBody.Agent?.Model?.ModelId).toBeTruthy()
+    expect(value.askTool).toBe('adp_ask_demo-bot')
+    expect(value.appKeyRef).toBe('ADP_APP_KEY_DEMO_BOT')
+    expect((value as { ask?: { tool: string; appKeyEnv: string } }).ask).toEqual({
+      tool: 'adp_ask',
+      appKeyEnv: 'ADP_APP_KEY_DEMO_BOT',
+    })
+    expect(ctx.tools.get('adp_ask_demo-bot')).toBeTruthy()
   })
 
   it('sim-spaceid-scope: cloud AKSK fills SpaceId on lists, not DescribeApp', async () => {
@@ -291,6 +300,9 @@ describe('live HTTP sims', () => {
     await ctx.adp.call('DescribeAgentSummaryList', { AppId: 'app-1' })
     const agents = JSON.parse(mock.calls.find((c) => c.action === 'DescribeAgentSummaryList')!.body) as { SpaceId?: string }
     expect(agents.SpaceId).toBeUndefined()
+    await ctx.adp.call('DescribeSkillCategoryList', {})
+    const cats = JSON.parse(mock.calls.find((c) => c.action === 'DescribeSkillCategoryList')!.body) as { SpaceId?: string }
+    expect(cats.SpaceId).toBeUndefined()
   })
 
   it('sim-adp-call-json-string: stringified payload is parsed, not dropped', async () => {
@@ -334,6 +346,73 @@ describe('live HTTP sims', () => {
     expect(value.kind).toBe('needs_appkey')
     expect(value.message?.toLowerCase()).toContain('appkey')
     expect(ctx.tools.get('adp_ask_no-key')).toBeUndefined()
+  })
+
+  it('sim-ask-name: CJK provision name registers the advertised adp_ask_* slug', async () => {
+    mock = await startMockAdp()
+    const { ctx } = await bootAdp({
+      mock,
+      keys: { gateway: 'sk-good', secretId: secrets.secretId, secretKey: secrets.secretKey },
+    })
+    const result = await ctx.tools.execute(toolCall('adp_provision_agent', {
+      name: 'Claw Demo 应用',
+      instructions: 'x',
+    }))
+    const value = (result as { value: { askTool: string } }).value
+    expect(value.askTool).toBe('adp_ask_claw-demo')
+    expect(ctx.tools.get('adp_ask_claw-demo')).toBeTruthy()
+  })
+
+  it('sim-adp-call-contract: required fields, remaps, nests, dead actions, 450027', async () => {
+    mock = await startMockAdp()
+    const { ctx } = await bootAdp({
+      mock,
+      keys: { secretId: secrets.secretId, secretKey: secrets.secretKey },
+    })
+
+    const listed = await ctx.tools.execute(toolCall('adp_list_actions', {}))
+    const actions = (listed as { value: { actions: Array<{ action: string; allowed: boolean; hint?: string; required?: string[] }> } }).value.actions
+    const models = actions.find((a) => a.action === 'DescribeModelList')
+    expect(models?.required).toContain('ModelScene')
+    expect(models?.hint).toMatch(/ModelScene/)
+    const chat = actions.find((a) => a.action === 'ChatCompletions')
+    expect(chat?.allowed).toBe(false)
+
+    const missingScene = await ctx.tools.execute(toolCall('adp_call', {
+      action: 'DescribeModelList',
+      payload: {},
+    }))
+    expect(missingScene.isError).toBe(true)
+    expect(JSON.stringify(missingScene)).toMatch(/ModelScene/)
+    expect(mock.calls.some((c) => c.action === 'DescribeModelList')).toBe(false)
+
+    const dead = await ctx.tools.execute(toolCall('adp_call', {
+      action: 'ChatCompletions',
+      payload: { AppId: 'app-1' },
+    }))
+    expect(dead.isError).toBe(true)
+    expect(JSON.stringify(dead)).toMatch(/adp_ask/)
+    expect(mock.calls.some((c) => c.action === 'ChatCompletions')).toBe(false)
+
+    const secret = await ctx.tools.execute(toolCall('adp_call', {
+      action: 'GetAppSecret',
+      payload: { AppId: 'app-1' },
+    }))
+    expect(secret.isError).toBeFalsy()
+    const secretBody = JSON.parse(mock.calls.find((c) => c.action === 'GetAppSecret')!.body) as { AppId?: string; AppBizId?: string }
+    expect(secretBody.AppId).toBeUndefined()
+    expect(secretBody.AppBizId).toBe('app-1')
+  })
+
+  it('sim-release-already: CreateRelease 450027 returns latest release instead of failing', async () => {
+    mock = await startMockAdp()
+    const { ctx } = await bootAdp({
+      mock,
+      keys: { secretId: secrets.secretId, secretKey: secrets.secretKey },
+    })
+    const recovered = await callControlAction(ctx.adp, 'CreateRelease', { AppId: 'already' })
+    expect(recovered.alreadyPublished).toBe(true)
+    expect((recovered.ReleaseSummary as { ReleaseId?: string } | undefined)?.ReleaseId).toBe('rel-latest')
   })
 
   it('sim-ask-sse: only reply is the answer', async () => {
@@ -529,6 +608,32 @@ describe('adp site proxy', () => {
       spaces: [],
     })
     expect(ctx.get('adp').vendor()).toBe('ChinaTencentCloud')
+  })
+
+  it('POST does not wait for the remote workspace list', async () => {
+    let vendor: 'ChinaTencentADP' | 'ChinaTencentCloud' = 'ChinaTencentADP'
+    let listSpacesCalls = 0
+    const ctx = {
+      get(name: string) {
+        if (name !== 'adp') return undefined
+        return {
+          vendor: () => vendor,
+          spaceId: () => 'default_space',
+          setLiveVendor: (next: typeof vendor | undefined) => {
+            if (next) vendor = next
+          },
+          setLiveSpaceId: () => undefined,
+          listSpaces: async () => {
+            listSpacesCalls += 1
+            return new Promise<never>(() => undefined)
+          },
+        }
+      },
+    }
+    const captured = collectResponse()
+    await handleSite(postReq(JSON.stringify({ vendor: 'ChinaTencentCloud' })), captured.node, ctx as never)
+    expect(captured.status).toBe(200)
+    expect(listSpacesCalls).toBe(0)
   })
 
   it('POST persists a real spaceId', async () => {

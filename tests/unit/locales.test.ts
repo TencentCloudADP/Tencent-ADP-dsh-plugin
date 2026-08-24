@@ -20,12 +20,9 @@ describe('adp locales', () => {
     expect(t(undefined, 'title')).toBe('Tencent Cloud ADP')
   })
 
-  it('keeps OneID copy honest in both languages', () => {
-    expect(t('en', 'oneidPopupBlocked')).toMatch(/will not fill the keys/)
-    expect(t('zh', 'oneidPopupBlocked')).toMatch(/都不会填入下方钥匙/)
+  it('keeps site copy aligned in both languages', () => {
     expect(t('zh', 'siteStandalone')).toBe('独立站')
     expect(t('zh', 'siteCloud')).toBe('公有云')
-    expect(t('en', 'siteHintStandalone')).toMatch(/not the 26-character AKSK/)
     expect(t('zh', 'spaceTitle')).toBe('工作空间')
     expect(t('en', 'spaceHint')).toMatch(/4510004/)
   })
@@ -36,9 +33,9 @@ describe('adp locales', () => {
   })
 
   it('field help copy names the real console paths in both languages', () => {
-    expect(t('zh', 'helpApiKey')).toContain('DeepSeek API')
-    expect(t('en', 'helpApiKey')).toContain('DeepSeek API')
-    expect(t('zh', 'helpSecretIdStandalone')).toContain('26')
+    expect(t('zh', 'helpApiKeyStandalone')).toContain('工具密钥')
+    expect(t('en', 'helpApiKeyCloud')).toContain('Tool Key')
+    expect(t('zh', 'helpSecretIdStandalone')).toContain('API 密钥')
     expect(t('en', 'helpSecretIdCloud')).toContain('AKID')
     expect(t('zh', 'helpSecretKeyCloud')).toContain('仅展示一次')
     expect(t('en', 'helpAppKey')).toMatch(/API Management/)

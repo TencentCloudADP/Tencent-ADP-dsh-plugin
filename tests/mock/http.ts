@@ -197,8 +197,45 @@ function controlResponse(action: string, body: string, state: MockAdpServer): { 
       return { Response: { RequestId: 'x', AppId: 'app-1' } }
     case 'CreateAgent':
       return { Response: { RequestId: 'x', AgentId: 'agent-1' } }
-    case 'CreateRelease':
+    case 'CreateRelease': {
+      if (payload.AgentId) {
+        return {
+          Response: {
+            Error: { Code: 'UnknownParameter', Message: 'The parameter `AgentId` is not recognized.' },
+            RequestId: 'x',
+          },
+        }
+      }
+      if (String(payload.AppId ?? '') === 'already') {
+        return {
+          Response: {
+            Error: {
+              Code: 'FailedOperation',
+              Message: '450027-当前暂无需发布的应用组件与应用设置',
+            },
+            RequestId: 'x',
+          },
+        }
+      }
       return { Response: { RequestId: 'x', ReleaseId: 'rel-1' } }
+    }
+    case 'DescribeLatestRelease':
+      return {
+        Response: {
+          RequestId: 'x',
+          ReleaseSummary: { ReleaseId: 'rel-latest', Status: 3, StatusDescription: '发布成功' },
+        },
+      }
+    case 'DescribeSkillCategoryList':
+      if (payload.SpaceId !== undefined) {
+        return {
+          Response: {
+            Error: { Code: 'UnknownParameter', Message: 'The parameter `SpaceId` is not recognized.' },
+            RequestId: 'x',
+          },
+        }
+      }
+      return { Response: { RequestId: 'x', CategoryList: [] } }
     case 'DescribeReleaseSummary':
       if (!payload.ReleaseId) {
         return {

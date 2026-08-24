@@ -3,7 +3,7 @@
 # folder alias) concatenates this insert and boot fails: duplicate adp-core.
 - insert:
     - id: adp-core
-      name: '@tencent/dsh-adp'
+      name: '@tencentcloudadp/dsh-adp'
       config:
         gatewayKeyEnv: ADP_API_KEY
         secretIdEnv: ADP_SECRET_ID
@@ -12,26 +12,26 @@
         region: ap-guangzhou
         vendor: ChinaTencentADP
     - id: llm-adp
-      name: '@tencent/dsh-adp/llm'
+      name: '@tencentcloudadp/dsh-adp/llm'
       config:
         providers: [adp]
         defaultModel: Hunyuan/hy3
     - id: web-adp
-      name: '@tencent/dsh-adp/web'
+      name: '@tencentcloudadp/dsh-adp/web'
     - id: plugins-adp
-      name: '@tencent/dsh-adp/plugins'
+      name: '@tencentcloudadp/dsh-adp/plugins'
       config:
         enabledPluginIds: []
         harvestMedia: true
     - id: skills-adp
-      name: '@tencent/dsh-adp/skills'
+      name: '@tencentcloudadp/dsh-adp/skills'
     - id: agents-adp
-      name: '@tencent/dsh-adp/agents'
+      name: '@tencentcloudadp/dsh-adp/agents'
       config:
         agents: []
         defaultAppMode: 4
     - id: control-adp
-      name: '@tencent/dsh-adp/control'
+      name: '@tencentcloudadp/dsh-adp/control'
       config:
         allowMutating:
           - CreateApp

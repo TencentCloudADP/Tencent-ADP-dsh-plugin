@@ -1,11 +1,11 @@
-# @tencent/dsh-adp
+# @tencentcloudadp/dsh-adp
 
 把腾讯云 ADP 接到 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的插件包。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
-[![Node](https://img.shields.io/badge/node-%5E22.19%20%7C%7C%20%3E%3D24-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
-[![GitHub stars](https://img.shields.io/github/stars/TencentCloudADP/Tencent-ADP-dsh-plugin)](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
+[License: MIT](LICENSE.txt)
+[Node](https://nodejs.org)
+[pnpm](https://pnpm.io)
+[GitHub stars](https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin)
 
 [English](README.md) · [中文](README.zh-CN.md)
 
@@ -14,10 +14,7 @@
 ## 安装
 
 ```sh
-git clone https://github.com/TencentCloudADP/Tencent-ADP-dsh-plugin.git
-cd Tencent-ADP-dsh-plugin
-dsh plugin --profile web add .
-# 或安装打好的 tarball：dsh plugin --profile web add ./tencent-dsh-adp-0.1.0.tgz
+dsh plugin --profile web add @tencentcloudadp/dsh-adp
 dsh web
 ```
 
@@ -29,12 +26,12 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 
 官方 API 文档覆盖的是**控制面 AKSK**和**AppKey SSE 对话**。本插件还用一条 OpenAI 形态的模型网关，官方概览没有写这条。端点和密钥出处见 [API 概览](https://cloud.tencent.com/document/product/1759/133868)。平面和报错见 [docs/credentials.md](docs/credentials.md)。
 
-![设置 → 插件配置 → 腾讯云 ADP 卡片](assets/screenshot-settings.png)
+设置 → 插件配置 → 腾讯云 ADP 卡片
 
 
 | 平面                   | 引用名                                | 官方出处                                                                                                                                              | 缺失时                                       |
 | -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| 网关 `sk-`             | `ADP_API_KEY`                      | [133868](https://cloud.tencent.com/document/product/1759/133868) 未写；与 adpworker 相同，走 `api.adp.cloud.tencent.com`                                  | LLM / 搜索 / 插件**调用**报 `MISSING_CREDENTIAL` |
+| 工具密钥                 | `ADP_API_KEY`                      | 独立站或公有云的 **密钥管理**页面，上方“新建工具密钥”                                                                                                                    | LLM / 搜索 / 插件**调用**报 `MISSING_CREDENTIAL` |
 | SecretId / SecretKey | `ADP_SECRET_ID` / `ADP_SECRET_KEY` | 公有云：[CAM 访问密钥](https://cloud.tencent.com/document/product/598/40488)。独立站：ADP 控制台 **密钥管理**                                                         | 模型 / 插件 / 应用**目录**为空                      |
 | 按应用的 AppKey          | 例如 `ADP_APP_KEY_DEMO`              | [应用发布 → API 管理](https://cloud.tencent.com/document/product/1759/104209) 或应用 **调用**（[SSE](https://cloud.tencent.com/document/product/1759/105561)） | 对应的 ask 工具不会注册                            |
 
@@ -69,9 +66,12 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 
 这对密钥只签控制面（`DescribeModelList`、`DescribeSpaceList`、市场目录）。它不是 `ADP_API_KEY`。
 
-### 3. 拿网关 `sk-`（`ADP_API_KEY`）
+### 3. 获取工具密钥（`ADP_API_KEY`）
 
-准备一个能通过 `POST https://api.adp.cloud.tencent.com/chat/completions` 鉴权的 API Key（一般以 `sk-` 开头）。混元 / DeepSeek 补全、混元搜索、API/MCP 插件 HTTP 都用它。独立站控制台的 AKSK 不能替代它。
+- **独立站**：[密钥管理](https://adp.tencent.com/adp#/key-manage)上方新建“工具密钥”。
+- **公有云**：[密钥管理](https://adp.cloud.tencent.com/adp#/key-manage)上方点击“新建工具密钥”。
+
+该工具密钥用于模型、 API/MCP 插件调用。
 
 ### 4. 可选：AppKey
 
@@ -87,27 +87,20 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 1. 在本机回环地址跑 `dsh web`（`127.0.0.1`）。只有回环地址允许写入凭证。
 2. 设置 → 插件配置 → **腾讯云 ADP**。
 3. 选 **独立站** 或 **公有云**。
-4. 贴上 SecretId / SecretKey（以及网关 `sk-`），保存。值经 `credentials.set` 写入 `$DSH_HOME/.credentials.yaml`。
+4. 贴上工具密钥、SecretId 和 SecretKey，保存。值经 `credentials.set` 写入 `$DSH_HOME/.credentials.yaml`。
 5. AKSK 存上之后，卡片用 `DescribeSpaceList` 拉工作空间列表，选一个。公有云的应用和插件调用需要真实 **SpaceId**；补丁默认的 `default_space` 在多数账号上不是工作空间（控制面 `4510004`）。列表为空时，从 ADP 控制台把 SpaceId 贴进去（[工作空间](https://cloud.tencent.com/document/product/1759/122576)）。
-6. 要用 ask 工具再贴 AppKey，再保存一次。
-
-卡片上的 OneID 会新开标签页打开 ADP 控制台，**不会**写入任何凭证。
-
-纯 API 从零搭 Claw 应用（CreateSpace → CreateApp → CreateAgent → CreateRelease → 对话）见 [133869](https://cloud.tencent.com/document/product/1759/133869)。那条链路是 AppKey SSE，不是本插件的网关 adapter。
 
 ## 装上即用
 
 `adp-core`、`llm-adp`、`web-adp`、`plugins-adp`、`skills-adp`、`agents-adp`、`control-adp` 随插件启动：
 
-![模型选择器里的 Tencent Cloud ADP 分组](assets/screenshot-models.png)
-
 - 选 `adp:Hunyuan/hy3`（或其他网关模型），完成一轮带工具调用的对话。目录和补全怎么接：[docs/seams.md](docs/seams.md#how-models-work-llm-adp)。
-- 当前 provider 选中时，`web_search` 走混元 AI 搜索（偏国内索引）。
+- 当前 provider 选中时，`web_search` 走混元 AI 搜索=。
 - 用 `adp_plugin_list` / `adp_plugin_enable` 或 `enabledPluginIds` 打开市场里的 API / MCP 插件。公有云的应用和插件调用需要先选好工作空间。
-- 生成类媒体链接（COS，约 24 小时过期）会落到工作区 `saved_files`。
+- 生成类媒体链接会落到工作区 `saved_files`。
 - 技能广场作为 `ctx.skills` provider（没有下载 URL 的条目只出现在 `list`）。
 - `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask 取 AppKey → `adp_ask_<slug>`。
-- `adp_ask` / `adp_ask_<slug>` — SSE 问答；不是 DSH 子 agent。
+- `adp_ask` / `adp_ask_<slug>` — SSE 问答。
 - `adp_list_actions` / `adp_call`，配合 `allowMutating` 做 App/Agent/Release 的增删改。会改控制面的调用需要审批。
 
 

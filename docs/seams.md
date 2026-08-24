@@ -9,7 +9,7 @@ DSH’s rule is: hang a capability on an existing seam, do not start a second ru
 | Model-callable tools | `ctx.tools.register` | `plugins-adp` API/MCP tools, `adp_plugin_list` / `adp_plugin_enable` |
 | Loadable instructions | `ctx.skills.registerProvider` | `skills-adp` |
 | Secrets | `ctx.credentials` **references** | three planes; never plaintext in patch |
-| Credentials settings card | `settings.plugin.item` (`key: adp-core`) + `credentials.set` | client half of `@tencent/dsh-adp`; OneID login-url proxy does not fill keys |
+| Credentials settings card | `settings.plugin.item` (`key: adp-core`) + `credentials.set` | client half of `@tencentcloudadp/dsh-adp`; OneID login-url proxy does not fill keys |
 | Long poll | `ctx.jobs.start` | release polling / generate Submit→Query |
 | Remote agent that calls local tools | `ctx.subagents` | **not used** |
 
@@ -49,10 +49,10 @@ After editing this repo, run `pnpm run prepare` (or `pnpm test`) and restart `ds
 ## Control vs chat vs gateway
 
 ```
-sk-  → api.adp.cloud.tencent.com/chat/completions   llm-adp (both sites; no /v1)
-sk-  → adp.cloud.tencent.com/plugin/api/v1   web-adp, plugins-adp API (公有云 plugin host)
-sk-  → adp.tencent.com/plugin/api/v1         plugins-adp API (独立站 plugin host)
-sk-  → ExternalMCPServerUrl                  plugins-adp MCP
+ADP_API_KEY → api.adp.cloud.tencent.com/chat/completions   llm-adp (both sites; no /v1)
+ADP_API_KEY → adp.cloud.tencent.com/plugin/api/v1   web-adp, plugins-adp API (公有云 plugin host)
+ADP_API_KEY → adp.tencent.com/plugin/api/v1         plugins-adp API (独立站 plugin host)
+ADP_API_KEY → ExternalMCPServerUrl                  plugins-adp MCP
 AKSK → capi.adp.tencent.com (独立站) or adp.tencentcloudapi.com (公有云)
 AppKey in body → adp.tencent.com/adp/v2/chat (独立站) or wss.lke…/adp/v2/chat (公有云)
 ```
