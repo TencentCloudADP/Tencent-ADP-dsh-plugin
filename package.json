@@ -1,6 +1,6 @@
 {
   "name": "@tencentcloudadp/dsh-adp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tencent Cloud ADP as a DeepSeek Harness out-of-tree plugin bundle",
   "license": "MIT",
   "type": "module",
