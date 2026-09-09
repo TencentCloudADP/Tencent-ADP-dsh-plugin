@@ -46,6 +46,8 @@ No Tencent credentials. HTTP is mocked at the process boundary (`tests/mock/http
 - [ ] `sim-mutating-gate` — DeleteApp unapproved does not call the control plane
 - [ ] `sim-skill-empty-url` — listed, `get` is not Description-as-body
 - [ ] `sim-skill-md` — `SkillMarkdownUrl` becomes markdown content
+- [ ] `subagent` — provider/tool registration, ADP protocol folding, native transcript projection, cancellation, and HTTP SSE all pass under `tests/subagent/`
+- [ ] `subagent-core-reuse` — omitted endpoint follows `adp-core.chatUrl()`; omitted AppKey reference still resolves `TENCENT_ADP_APP_KEY`
 
 Loader composition lives in `tests/composition/`. Product-visible plugins are started through Loader + mock hosts, not a hand-rolled `ctx.plugin` of the row under test alone (stubs for credentials / systemPrompt / llm / web / tools / skills are test infrastructure).
 
@@ -71,4 +73,4 @@ Live checks (manual or `test:live`):
 - [ ] unload the plugin row → tools / SkillProvider / MCP sessions gone
 - [ ] `skills-adp` lists plaza entries (`DescribeSkillSummaryList` without Perspective)
 - [ ] `control-adp` `adp_list_actions` + read `adp_call`; mutating stays gated
-- [ ] `agents-adp` CreateApp → CreateAgent → CreateRelease → poll `ReleaseId` → SSE ask; delete throwaway `dsh-e2e-*` apps. If CreateApp is `4900001` (account quota), live-check `DescribeReleaseSummary` with a real `ReleaseId` on an existing running app, then SSE ask.
+- [ ] optional `agents-adp` (not in the default bundle): CreateApp → CreateAgent → CreateRelease → poll `ReleaseId` → SSE ask; delete throwaway `dsh-e2e-*` apps. If CreateApp is `4900001` (account quota), live-check `DescribeReleaseSummary` with a real `ReleaseId` on an existing running app, then SSE ask.

@@ -62,6 +62,14 @@ describe('sim-pack', () => {
       '@deepseek-ai/dsh-client-runtime',
     ])
     expect(manifest.exports?.['./client']).toEqual({ default: './lib/client.js' })
+    expect(manifest.exports?.['./subagent']).toEqual({
+      types: './lib/subagent/index.d.ts',
+      default: './lib/subagent/index.js',
+    })
+    expect(manifest.exports?.['./subagent/tool']).toEqual({
+      types: './lib/subagent/tool.d.ts',
+      default: './lib/subagent/tool.js',
+    })
   })
 
   it('ships a ModuleLoader client bundle', () => {

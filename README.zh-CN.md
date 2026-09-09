@@ -33,7 +33,7 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 | -------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | 工具密钥                 | `ADP_API_KEY`                      | 独立站或公有云的 **密钥管理**页面，上方“新建工具密钥”                                                                                                                    | LLM / 搜索 / 插件**调用**报 `MISSING_CREDENTIAL` |
 | SecretId / SecretKey | `ADP_SECRET_ID` / `ADP_SECRET_KEY` | 公有云：[CAM 访问密钥](https://cloud.tencent.com/document/product/598/40488)。独立站：ADP 控制台 **密钥管理**                                                         | 模型 / 插件 / 应用**目录**为空                      |
-| 按应用的 AppKey          | 例如 `ADP_APP_KEY_DEMO`              | [应用发布 → API 管理](https://cloud.tencent.com/document/product/1759/104209) 或应用 **调用**（[SSE](https://cloud.tencent.com/document/product/1759/105561)） | 对应的 ask 工具不会注册                            |
+| 按应用的 AppKey          | `TENCENT_ADP_APP_KEY`（subagent 默认）或 `ADP_APP_KEY_*` | [应用发布 → API 管理](https://cloud.tencent.com/document/product/1759/104209) 或应用 **调用**（[SSE](https://cloud.tencent.com/document/product/1759/105561)） | subagent / ask 工具无法调用已发布应用 |
 
 
 
@@ -75,7 +75,7 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 
 ### 4. 可选：AppKey
 
-只给 `adp_ask` / `adp_ask_<slug>`（对已发布应用做 SSE），选 `adp:Hunyuan/hy3` 不需要它。
+用于 `subagent_adp` 和 `adp_ask` / `adp_ask_<slug>`（对已发布应用做 SSE），选 `adp:Hunyuan/hy3` 不需要它。迁移自 `dsh-plugin-subagent` 的 provider 继续使用原来的默认引用名 `TENCENT_ADP_APP_KEY`。
 
 1. 先发布应用。
 2. 打开 **应用发布 → 服务状态 → API 管理**，或 **应用管理 → 调用**，复制 AppKey（[104209](https://cloud.tencent.com/document/product/1759/104209)、[105560](https://cloud.tencent.com/document/product/1759/105560)）。
@@ -92,15 +92,15 @@ ADP 需要三类凭证。配置里只写**引用名**（`ADP_API_KEY` 等）；�
 
 ## 装上即用
 
-`adp-core`、`llm-adp`、`web-adp`、`plugins-adp`、`skills-adp`、`agents-adp`、`control-adp` 随插件启动：
+`adp-core`、`llm-adp`、`web-adp`、`plugins-adp`、`skills-adp`、`control-adp`、`subagent-adp` 和 `tool-subagent-adp` 随插件启动。`agents-adp` 仍由包内的 `/agents` 入口提供，但默认 bundle 不加载：
 
 - 选 `adp:Hunyuan/hy3`（或其他网关模型），完成一轮带工具调用的对话。目录和补全怎么接：[docs/seams.md](docs/seams.md#how-models-work-llm-adp)。
 - 当前 provider 选中时，`web_search` 走混元 AI 搜索=。
 - 用 `adp_plugin_list` / `adp_plugin_enable` 或 `enabledPluginIds` 打开市场里的 API / MCP 插件。公有云的应用和插件调用需要先选好工作空间。
 - 生成类媒体链接会落到工作区 `saved_files`。
 - 技能广场作为 `ctx.skills` provider（没有下载 URL 的条目只出现在 `list`）。
-- `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask 取 AppKey → `adp_ask_<slug>`。
-- `adp_ask` / `adp_ask_<slug>` — SSE 问答。
+- 可选的 `agents-adp` 提供 `adp_provision_agent` 和 `adp_ask` / `adp_ask_<slug>`；需要旧的普通问答工具模式时手动加载 `@tencentcloudadp/dsh-adp/agents`。
+- `subagent_adp` — 把已发布的 ADP 应用作为真正的 DSH child Agent 运行；思考、远端工具轨迹和最终回复写入原生 child session。默认从 `TENCENT_ADP_APP_KEY` 解析 AppKey；未显式配置 `endpoint` 时，每次调用都复用 `adp-core` 当前站点的 SSE 地址。
 - `adp_list_actions` / `adp_call`，配合 `allowMutating` 做 App/Agent/Release 的增删改。会改控制面的调用需要审批。
 
 

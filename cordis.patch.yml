@@ -25,11 +25,6 @@
         harvestMedia: true
     - id: skills-adp
       name: '@tencentcloudadp/dsh-adp/skills'
-    - id: agents-adp
-      name: '@tencentcloudadp/dsh-adp/agents'
-      config:
-        agents: []
-        defaultAppMode: 4
     - id: control-adp
       name: '@tencentcloudadp/dsh-adp/control'
       config:
@@ -41,3 +36,18 @@
           - CreateRelease
           - DeleteAgent
           - DeleteApp
+    - id: subagent-adp
+      name: '@tencentcloudadp/dsh-adp/subagent'
+      config:
+        providerName: adp
+        appKeyEnv: TENCENT_ADP_APP_KEY
+    - id: tool-subagent-adp
+      name: '@tencentcloudadp/dsh-adp/subagent/tool'
+      config:
+        provider: adp
+        toolName: subagent_adp
+        agentName: 旅游助手
+        agentDescription: 旅游相关的问题，天气，出行规划，景点信息，门票信息等。
+        backgroundMode: one-shot
+        enableRunInBackground: true
+        maxDepth: provider-managed

@@ -67,6 +67,8 @@ jobs:
             lib/skills/index.js \
             lib/agents/index.js \
             lib/control/index.js \
+            lib/subagent/index.js \
+            lib/subagent/tool.js \
             lib/client.js
           do
             test -f "$entry" || {

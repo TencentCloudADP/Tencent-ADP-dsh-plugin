@@ -13,6 +13,8 @@ export default defineConfig({
     'skills/index': 'src/skills/index.ts',
     'agents/index': 'src/agents/index.ts',
     'control/index': 'src/control/index.ts',
+    'subagent/index': 'src/subagent/index.ts',
+    'subagent/tool': 'src/subagent/tool.ts',
   },
   outDir: 'lib',
   format: ['esm'],
