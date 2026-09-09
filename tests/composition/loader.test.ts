@@ -11,6 +11,8 @@ import * as pluginsAdp from '../../src/plugins/index.ts'
 import * as skillsAdp from '../../src/skills/index.ts'
 import * as agentsAdp from '../../src/agents/index.ts'
 import * as controlAdp from '../../src/control/index.ts'
+import * as subagentAdp from '../../src/subagent/index.ts'
+import * as subagentToolAdp from '../../src/subagent/tool.ts'
 import { startMockAdp, type MockAdpServer } from '../mock/http.ts'
 import { bootViaLoader, MemoryCredentials, toolCall } from '../mock/harness.ts'
 
@@ -32,12 +34,22 @@ describe('bundle patch loader ids', () => {
   const ids = insertIds(patch)
 
   it('one bundle layer has unique loader ids', () => {
-    expect(ids).toEqual(['adp-core', 'llm-adp', 'web-adp', 'plugins-adp', 'skills-adp', 'agents-adp', 'control-adp'])
+    expect(ids).toEqual([
+      'adp-core',
+      'llm-adp',
+      'web-adp',
+      'plugins-adp',
+      'skills-adp',
+      'control-adp',
+      'subagent-adp',
+      'tool-subagent-adp',
+    ])
     expect(() => assertUniqueLoaderIds(ids)).not.toThrow()
   })
 
-  it('skills, agents, and control ship enabled', () => {
+  it('skills, control, and subagent ship enabled while agents-adp stays opt-in', () => {
     expect(patch).not.toMatch(/disabled:\s*true/)
+    expect(patch).not.toMatch(/^\s+- id: agents-adp\s*$/m)
   })
 
   it('two bundle layers of this patch duplicate adp-core', () => {
@@ -56,7 +68,17 @@ describe('bundle patch loader ids', () => {
 describe('sim-export', () => {
   it('function plugins keep named name/inject/apply and default does not replace them', () => {
     const loader = Object.create(Loader.prototype) as Loader
-    for (const mod of [adpCore, llmAdp, webAdp, pluginsAdp, skillsAdp, agentsAdp, controlAdp]) {
+    for (const mod of [
+      adpCore,
+      llmAdp,
+      webAdp,
+      pluginsAdp,
+      skillsAdp,
+      agentsAdp,
+      controlAdp,
+      subagentAdp,
+      subagentToolAdp,
+    ]) {
       expect('default' in mod).toBe(false)
       expect(mod.name).toBeTypeOf('string')
       expect(mod.inject).toBeInstanceOf(Array)
@@ -109,6 +131,8 @@ describe('sim-hmr + Loader composition', () => {
     expect(ctx.llm.listProviders().some((p) => p.id === 'adp')).toBe(true)
     expect(ctx.tools.get('adp_plugin_list')).toBeTruthy()
     expect(ctx.tools.get('adp_list_actions')).toBeTruthy()
+    expect(ctx.subagents.getProvider('adp')).toBeTruthy()
+    expect(ctx.tools.get('subagent_adp')).toBeTruthy()
   })
 
   it('sim-hmr: disposing the plugins fiber unregisters tools', async () => {

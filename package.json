@@ -43,6 +43,14 @@
       "types": "./lib/control/index.d.ts",
       "default": "./lib/control/index.js"
     },
+    "./subagent": {
+      "types": "./lib/subagent/index.d.ts",
+      "default": "./lib/subagent/index.js"
+    },
+    "./subagent/tool": {
+      "types": "./lib/subagent/tool.d.ts",
+      "default": "./lib/subagent/tool.js"
+    },
     "./client": {
       "default": "./lib/client.js"
     },
@@ -88,8 +96,12 @@
     "@deepseek-ai/dsh-launch-environment": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-settings": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-session": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-skill": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-subagent": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-system-prompt": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-timeout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tool-subagent": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-web": "^0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1"
@@ -110,15 +122,27 @@
     "@deepseek-ai/dsh-settings": {
       "optional": true
     },
+    "@deepseek-ai/dsh-session": {
+      "optional": true
+    },
     "@deepseek-ai/dsh-skill": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-subagent": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-system-prompt": {
       "optional": true
     },
     "@deepseek-ai/dsh-timeout": {
       "optional": true
+    },
+    "@deepseek-ai/dsh-tool-subagent": {
+      "optional": true
     }
   },
   "dependencies": {
-    "eventsource-parser": "^3.1.0",
+    "eventsource-parser": "^4.1.0",
     "fflate": "^0.8.2"
   },
   "devDependencies": {
@@ -131,8 +155,12 @@
     "@deepseek-ai/dsh-launch-environment": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-llm": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-settings": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-session": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-skill": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-subagent": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-system-prompt": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-timeout": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tool-subagent": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-web": "^0.1.0-rc.6",
     "@deepseek-ai/schemastery": "^3.18.1",

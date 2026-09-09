@@ -32,7 +32,7 @@ Official ADP API docs cover **control-plane AKSK** and **AppKey SSE chat**. They
 | --- | --- | --- | --- |
 | Tool Key | `ADP_API_KEY` | Create a Tool Key in the upper section of the site’s **Key Management** page | LLM / search / plugin **calls** fail with `MISSING_CREDENTIAL` |
 | SecretId / SecretKey | `ADP_SECRET_ID` / `ADP_SECRET_KEY` | Public cloud: [CAM API keys](https://cloud.tencent.com/document/product/598/40488). Independent site: ADP console **Key Management** | Model / plugin / app **catalogs** stay empty |
-| Per-app AppKey | e.g. `ADP_APP_KEY_DEMO` | [App publish → API management](https://cloud.tencent.com/document/product/1759/104209) or app **Invoke** ([SSE](https://cloud.tencent.com/document/product/1759/105561)) | The matching ask tool is not registered |
+| Per-app AppKey | `TENCENT_ADP_APP_KEY` (subagent default) or `ADP_APP_KEY_*` | [App publish → API management](https://cloud.tencent.com/document/product/1759/104209) or app **Invoke** ([SSE](https://cloud.tencent.com/document/product/1759/105561)) | Subagent / ask tools cannot call the published app |
 
 ### 1. Open ADP
 
@@ -69,7 +69,7 @@ The Tool Key is used for Hunyuan / DeepSeek completions, Hunyuan search, and API
 
 ### 4. Optional: AppKey
 
-Needed only for `adp_ask` / `adp_ask_<slug>` (SSE to a published app), not for picking `adp:Hunyuan/hy3`.
+Used by `subagent_adp` and `adp_ask` / `adp_ask_<slug>` (SSE to a published app), not for picking `adp:Hunyuan/hy3`. The provider migrated from `dsh-plugin-subagent` keeps its original default reference name, `TENCENT_ADP_APP_KEY`.
 
 1. Publish the app.
 2. Open **App Publish → Service Status → API Management**, or **App Management → Invoke**, and copy AppKey ([104209](https://cloud.tencent.com/document/product/1759/104209), [105560](https://cloud.tencent.com/document/product/1759/105560)).
@@ -87,7 +87,7 @@ A Claw-style “build the app entirely via API” walkthrough (CreateSpace → C
 
 ## What you get
 
-`adp-core`, `llm-adp`, `web-adp`, `plugins-adp`, `skills-adp`, `agents-adp`, and `control-adp` start with the plugin:
+`adp-core`, `llm-adp`, `web-adp`, `plugins-adp`, `skills-adp`, `control-adp`, `subagent-adp`, and `tool-subagent-adp` start with the plugin. `agents-adp` remains available from the package's `/agents` entry but is not loaded by the default bundle:
 
 ![Model picker — Tencent Cloud ADP group](assets/screenshot-models.png)
 
@@ -96,8 +96,8 @@ A Claw-style “build the app entirely via API” walkthrough (CreateSpace → C
 - Enable an API or MCP marketplace plugin via `adp_plugin_list` / `adp_plugin_enable`, or `enabledPluginIds`. Public-cloud plugin/app calls need the workspace chosen above.
 - Generated media links (~24h COS) are saved into the workspace as `saved_files`.
 - Skill plaza as a `ctx.skills` provider (entries without download URLs stay in `list` only).
-- `adp_provision_agent` — CreateApp → CreateAgent → CreateRelease → FieldMask AppKey → `adp_ask_<slug>`.
-- `adp_ask` / `adp_ask_<slug>` — SSE ask; not a DSH subagent.
+- Optional `agents-adp` provides `adp_provision_agent` and `adp_ask` / `adp_ask_<slug>`; manually load `@tencentcloudadp/dsh-adp/agents` when the legacy plain-tool mode is needed.
+- `subagent_adp` — run a published ADP app as a real DSH child Agent; reasoning, remote tool traces, and the final reply are projected into its native child session. Its AppKey defaults to `TENCENT_ADP_APP_KEY`; unless `endpoint` is explicit, every run follows the active `adp-core` site's SSE URL.
 - `adp_list_actions` / `adp_call` with `allowMutating` for App/Agent/Release CRUD. Mutating calls require approval.
 
 ## Documentation

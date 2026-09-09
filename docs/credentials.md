@@ -38,11 +38,13 @@ Console paths (CAM vs ADP 密钥管理, workspace, AppKey) are in the README [Co
 ## AppKey
 
 - Per application, Bearer-equivalent for SSE chat
+- `subagent-adp` keeps the legacy `dsh-plugin-subagent` default credential reference `TENCENT_ADP_APP_KEY`; override it with `subagent-adp.config.appKeyEnv` only when a different reference is intentional
+- `agents-adp` accepts per-app references such as `ADP_APP_KEY_DEMO`
 - Official fetch: `DescribeApp` with `FieldMask.Paths=["SecretInfo"]` → `App.SecretInfo.AppKey`
 - Without FieldMask, `SecretInfo` is null (pinned in `tests/fixtures/control/describe-app-no-mask.json`)
 - Fallback: LKE `GetAppSecret(AppBizId)`
 - If both are empty after a successful release, `adp_provision_agent` returns `kind: "needs_appkey"` and does **not** register a fake ask tool. Paste the console value into a credential-ref and bind `agents-adp.agents[].appKeyEnv`.
 
-AKSK cannot drive `/adp/v2/chat`. AppKey cannot sign the control plane. Paste keys on the card (or into `$DSH_HOME/.credentials.yaml`).
+AKSK cannot drive `/adp/v2/chat`. AppKey cannot sign the control plane. Paste keys on the card, store `TENCENT_ADP_APP_KEY` through the credentials service, or export it in the DSH process environment.
 
 Do not put AppKey, Tool Key, or SecretKey samples in docs or fixtures.

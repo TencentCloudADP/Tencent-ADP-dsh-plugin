@@ -11,7 +11,7 @@ DSH’s rule is: hang a capability on an existing seam, do not start a second ru
 | Secrets | `ctx.credentials` **references** | three planes; never plaintext in patch |
 | Credentials settings card | `settings.plugin.item` (`key: adp-core`) + `credentials.set` | client half of `@tencentcloudadp/dsh-adp`; OneID login-url proxy does not fill keys |
 | Long poll | `ctx.jobs.start` | release polling / generate Submit→Query |
-| Remote agent that calls local tools | `ctx.subagents` | **not used** |
+| Published ADP app as a child Agent | `ctx.subagents.registerProvider` | `subagent-adp`; native child session and lineage, remote tools only |
 
 ## How models work (`llm-adp`)
 
@@ -42,9 +42,11 @@ After editing this repo, run `pnpm run prepare` (or `pnpm test`) and restart `ds
 | Role | DSH Agent calls Hunyuan / DeepSeek / … | Talk to a published ADP app |
 | Tools | DSH local tools (search, plugins) | Plugins bound on the cloud app; no local DSH tools |
 
-## Why cloud agents are not subagents
+## ADP subagent boundary
 
-`POST /adp/v2/chat` does not accept `Tools` and does not return `tool_call` (adpworker requirement ④). The cloud agent runs whatever plugins/skills are bound on ADP. DSH local bash/fs cannot be inserted into that loop. `adp_ask_*` is one-way delivery: question in, finished reply out.
+`subagent-adp` registers a one-shot provider on `ctx.subagents`. Each delegation creates a real DSH child Agent/session and projects ADP reasoning, remote tool traces, and the final reply into standard session events. The model-facing `subagent_adp` tool reuses `@deepseek-ai/dsh-tool-subagent`.
+
+The cloud application still runs its own ADP-bound plugins and skills. The `/adp/v2/chat` request cannot inject DSH-local bash/filesystem tools, so the child is native in DSH lifecycle and display but remote in execution. `adp_ask_*` remains the lighter question-in/reply-out path.
 
 ## Control vs chat vs gateway
 
@@ -54,7 +56,7 @@ ADP_API_KEY → adp.cloud.tencent.com/plugin/api/v1   web-adp, plugins-adp API (
 ADP_API_KEY → adp.tencent.com/plugin/api/v1         plugins-adp API (独立站 plugin host)
 ADP_API_KEY → ExternalMCPServerUrl                  plugins-adp MCP
 AKSK → capi.adp.tencent.com (独立站) or adp.tencentcloudapi.com (公有云)
-AppKey in body → adp.tencent.com/adp/v2/chat (独立站) or wss.lke…/adp/v2/chat (公有云)
+AppKey in body → adp.tencent.com/adp/v2/chat (独立站) or wss.lke…/adp/v2/chat (公有云), used by agents-adp and subagent-adp
 ```
 
 `ctx.adp` is a class `Service` (definition + the only provider). Other rows `inject: ['adp']` and do not depend on each other.

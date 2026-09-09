@@ -6,6 +6,7 @@ import WebRuntime from '@deepseek-ai/dsh-web'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import type { ToolExecutionInput } from '@deepseek-ai/dsh-tools'
 import SkillRegistry from '@deepseek-ai/dsh-skill'
+import SubagentRuntime from '@deepseek-ai/dsh-subagent'
 import { existsSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { resolve } from 'node:path'
@@ -16,6 +17,8 @@ import * as pluginsAdp from '../../src/plugins/index.ts'
 import * as skillsAdp from '../../src/skills/index.ts'
 import * as agentsAdp from '../../src/agents/index.ts'
 import * as controlAdp from '../../src/control/index.ts'
+import * as subagentAdp from '../../src/subagent/index.ts'
+import * as subagentToolAdp from '../../src/subagent/tool.ts'
 import type { MockAdpServer } from './http.ts'
 
 export class MemoryCredentials extends CredentialProvider {
@@ -97,6 +100,7 @@ export async function bootAdp(options: BootOptions) {
   await ctx.plugin(WebRuntime)
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(SkillRegistry)
+  await ctx.plugin(SubagentRuntime)
 
   const creds = ctx.credentials as MemoryCredentials
   if (options.keys?.gateway) await creds.set(credentialRef('ADP_API_KEY'), options.keys.gateway)
@@ -125,6 +129,16 @@ export async function bootAdp(options: BootOptions) {
       : [],
   })
   await ctx.plugin(controlAdp, { allowMutating: options.allowMutating ?? ['CreateApp', 'CreateAgent', 'ModifyApp', 'ModifyAgent', 'CreateRelease', 'DeleteAgent', 'DeleteApp'] })
+  await ctx.plugin(subagentAdp, { providerName: 'adp', appKeyEnv: 'TENCENT_ADP_APP_KEY' })
+  await ctx.plugin(subagentToolAdp, {
+    provider: 'adp',
+    toolName: 'subagent_adp',
+    agentName: '旅游助手',
+    agentDescription: '旅游相关的问题，天气，出行规划，景点信息，门票信息等。',
+    backgroundMode: 'one-shot',
+    enableRunInBackground: true,
+    maxDepth: 'provider-managed',
+  })
   await ctx.loader.await()
   return { ctx, creds }
 }
@@ -139,6 +153,7 @@ export async function bootViaLoader(options: BootOptions) {
   await ctx.plugin(WebRuntime)
   await ctx.plugin(ToolRuntime)
   await ctx.plugin(SkillRegistry)
+  await ctx.plugin(SubagentRuntime)
 
   const creds = ctx.credentials as MemoryCredentials
   if (options.keys?.gateway) await creds.set(credentialRef('ADP_API_KEY'), options.keys.gateway)
@@ -172,11 +187,28 @@ export async function bootViaLoader(options: BootOptions) {
     config: { enabledPluginIds: options.enabledPluginIds ?? [] },
   })
   await ctx.loader.create({ id: 'skills-adp', name: entry('skills/index.js') })
-  await ctx.loader.create({ id: 'agents-adp', name: entry('agents/index.js') })
   await ctx.loader.create({
     id: 'control-adp',
     name: entry('control/index.js'),
     config: { allowMutating: options.allowMutating ?? ['DeleteApp'] },
+  })
+  await ctx.loader.create({
+    id: 'subagent-adp',
+    name: entry('subagent/index.js'),
+    config: { providerName: 'adp', appKeyEnv: 'TENCENT_ADP_APP_KEY' },
+  })
+  await ctx.loader.create({
+    id: 'tool-subagent-adp',
+    name: entry('subagent/tool.js'),
+    config: {
+      provider: 'adp',
+      toolName: 'subagent_adp',
+      agentName: '旅游助手',
+      agentDescription: '旅游相关的问题，天气，出行规划，景点信息，门票信息等。',
+      backgroundMode: 'one-shot',
+      enableRunInBackground: true,
+      maxDepth: 'provider-managed',
+    },
   })
   await ctx.loader.await()
   return { ctx, creds }
